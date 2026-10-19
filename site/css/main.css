@@ -2273,7 +2273,7 @@ button {
 /* phones run the background layout: content cards sit over the animation, so keep text crisp and drop the caption strip */
 @media (max-width: 860px) {
   [data-layout="bg"] .page-inner {
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    background: color-mix(in srgb, var(--bg) 74%, transparent);
   }
   [data-layout="bg"] .hud-tl {
     display: none;
