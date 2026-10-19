@@ -1,14 +1,15 @@
 name: Deploy site
 
-# The site's source lives in nick-delirium/nick-delirium (site/). This repo only builds it and
-# serves it at the root address, https://nick-delirium.github.io/.
+# Builds site/ and publishes it to https://nick-delirium.github.io/ (Pages source: GitHub Actions).
 on:
-  repository_dispatch:
-    types: [site-updated] # sent by nick-delirium/nick-delirium when site/ changes
-  schedule:
-    - cron: "30 3 * * *" # daily fallback, in case the dispatch token isn't configured
   push:
     branches: [main]
+    paths:
+      - "site/**"
+      - "tools/build.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -25,9 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: nick-delirium/nick-delirium
-          ref: master
       - uses: actions/setup-node@v4
         with:
           node-version: 22
