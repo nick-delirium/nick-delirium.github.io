@@ -26,7 +26,7 @@
       const q = new URLSearchParams(location.search);
       const d = document.documentElement;
       d.dataset.theme = q.get("theme") || s.theme || "night-city";
-      d.dataset.layout = q.get("layout") || s.layout || "split";
+      d.dataset.layout = q.get("layout") || (matchMedia("(max-width: 860px)").matches ? "bg" : s.layout) || "split";
       // CRT overlay is off by default on touch screens (matches the defaults in main.js)
       const touch = !matchMedia("(hover: hover) and (pointer: fine)").matches;
       if (s.crt === false || ((s.v !== 2 || s.crt === undefined) && touch)) d.classList.add("no-crt");

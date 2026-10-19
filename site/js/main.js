@@ -8,7 +8,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const root = document.documentElement;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const mobile = matchMedia("(max-width: 860px)").matches;
+// phones always get the full-background layout; the saved layout applies on wider screens
+const mobileMQ = matchMedia("(max-width: 860px)");
 const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 /* ═════════════ settings ═════════════ */
@@ -77,19 +78,22 @@ function palette() {
   return { bg: v("--bg"), fg: v("--ascii-fg"), main: v("--main"), alt: v("--alt"), hot: v("--hot"), white: v("--white") };
 }
 
-let applied = {};
+let applied = {}, appliedLayout = null;
+mobileMQ.addEventListener("change", () => apply());
 function apply() {
   if (!THEMES.includes(settings.theme)) settings.theme = defaults.theme;
   if (!LAYOUTS.includes(settings.layout)) settings.layout = defaults.layout;
   if (!RESES.includes(settings.res)) settings.res = defaults.res;
 
-  if (applied.layout && applied.layout !== settings.layout) {
+  const layout = mobileMQ.matches && !query.has("layout") ? "bg" : settings.layout;
+  if (appliedLayout && appliedLayout !== layout) {
     viz.removeAttribute("style");
     viz.classList.remove("min", "max");
     renderer.paused = false;
   }
+  appliedLayout = layout;
   root.dataset.theme = settings.theme;
-  root.dataset.layout = settings.layout;
+  root.dataset.layout = layout;
   root.classList.toggle("no-crt", !settings.crt);
   root.classList.toggle("fx-glitch", settings.glitch && settings.motion);
   const tc = $('meta[name="theme-color"]');
@@ -100,7 +104,7 @@ function apply() {
   renderer.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
 
   $$("[data-set-theme]").forEach((b) => b.classList.toggle("on", b.dataset.setTheme === settings.theme));
-  $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === settings.layout));
+  $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === layout));
   $$("[data-set-res]").forEach((b) => b.classList.toggle("on", b.dataset.setRes === settings.res));
   $$("[data-set-fx]").forEach((i) => (i.checked = !!settings[i.dataset.setFx]));
 
