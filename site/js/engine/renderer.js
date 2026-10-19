@@ -6,7 +6,8 @@ import { Field, GLYPHS, RAMP_IDX, RAMP_LEN, G, hash1, SLICES, GLYPH_COUNT, CJK_F
 export const RES = { ultra: 4, hi: 5, med: 6, lo: 8 }; // cell width in css px
 const LEVELS = 8;
 const HUES = 5;
-const ATLAS_COLS = 64; // glyphs per atlas block row; each block holds HUES × LEVELS tinted rows
+const ATLAS_COLS = 48; // glyphs per atlas row; hues sit side by side, levels stack below
+const MAX_FPS = 60; // ProMotion screens would otherwise run every scene at 120
 const FONT = '"JetBrains Mono", ui-monospace, Menlo, monospace';
 const NOISE_GLYPHS = Array.from("!<>-_\\/[]{}=+*^?#%&$01░▒").map(G);
 const TRANSITION = 0.75;
@@ -50,6 +51,7 @@ export class Renderer {
     this.statT = 0;
     this.slowFrames = 0;
     this.degraded = false;
+    this.fpsCap = MAX_FPS;
     this.palette = null;
     this.raf = 0;
     this.last = 0;
@@ -182,8 +184,10 @@ export class Renderer {
   }
 
   /**
-   * Atlas = white glyph mask tinted once per (hue, level). Glyph g lives at column g % ATLAS_COLS
-   * of block floor(g / ATLAS_COLS); each block stacks HUES × LEVELS tinted copies of its mask row.
+   * Atlas = white glyph mask tinted once per (hue, level). Glyph g lives at column g % ATLAS_COLS of
+   * glyph row floor(g / ATLAS_COLS). Hues are laid out side by side and each glyph row stacks its
+   * LEVELS tints below it, which keeps the texture under 4096px on both axes at every density
+   * (mobile GPUs reject or slowly emulate taller textures, which shows up as a blank canvas).
    */
   buildAtlas() {
     if (!this.tw || !this.palette) return;
@@ -234,8 +238,8 @@ export class Renderer {
       m.drawImage(big, s.sx * tw, s.sy * th, tw, th, x, y, tw, th);
     });
 
-    atlas.width = W;
-    atlas.height = blocks * HUES * LEVELS * th;
+    atlas.width = HUES * W;
+    atlas.height = blocks * LEVELS * th;
     const a = atlas.getContext("2d");
     a.clearRect(0, 0, atlas.width, atlas.height);
     const tint = document.createElement("canvas");
@@ -252,16 +256,17 @@ export class Renderer {
         tc.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
         tc.fillRect(0, 0, W, tint.height);
         for (let blk = 0; blk < blocks; blk++) {
-          a.drawImage(tint, 0, blk * th, W, th, 0, ((blk * HUES + h) * LEVELS + l) * th, W, th);
+          a.drawImage(tint, 0, blk * th, W, th, h * W, (blk * LEVELS + l) * th, W, th);
         }
       }
     }
-    // per-glyph lookup: source x and block row offset
+    // per-glyph lookup: source x within a hue band, and the glyph row's first level row
+    this.hueW = W;
     this.gx = new Int32Array(GLYPH_COUNT);
     this.gb = new Int32Array(GLYPH_COUNT);
     for (let g = 0; g < GLYPH_COUNT; g++) {
       this.gx[g] = (g % ATLAS_COLS) * tw;
-      this.gb[g] = ((g / ATLAS_COLS) | 0) * HUES * LEVELS;
+      this.gb[g] = ((g / ATLAS_COLS) | 0) * LEVELS;
     }
   }
 
@@ -280,6 +285,10 @@ export class Renderer {
     this.raf = 0;
     const should = this.scene && this.visible && !document.hidden && !this.paused && this.motion;
     if (!should) return;
+    if (now - this.last < 1000 / this.fpsCap - 2) {
+      this.raf = requestAnimationFrame(this.loop);
+      return;
+    }
     const dt = Math.max(0, Math.min(0.05, (now - this.last) / 1000));
     this.last = now;
     this.sceneT += dt;
@@ -291,18 +300,26 @@ export class Renderer {
       this.sceneT = 0;
     }
     this.draw(now / 1000);
-    this.govern(performance.now() - t0, now);
+    this.govern(performance.now() - t0, now, dt * 1000);
     this.raf = requestAnimationFrame(this.loop);
   }
 
-  /** drop bloom, then resolution, if frames keep running long */
-  govern(ms, now) {
+  /**
+   * Step down when the device can't keep up: bloom off, then a 30fps cap, then larger cells.
+   * Judged on the real frame interval as well as JS time: Safari defers canvas work to the
+   * compositor, so a struggling phone can look cheap in JS while dropping frames on screen.
+   */
+  govern(ms, now, interval) {
     this.frames++;
-    this.slowFrames = ms > 20 ? this.slowFrames + 1 : Math.max(0, this.slowFrames - 1);
-    if (this.slowFrames > 90) {
+    const target = 1000 / this.fpsCap;
+    const slow = ms > 20 || interval > target * 1.6;
+    this.slowFrames = slow ? this.slowFrames + 1 : Math.max(0, this.slowFrames - 1);
+    if (this.slowFrames > 75) {
       this.slowFrames = 0;
       if (this.bloom && !this.autoNoBloom) {
         this.autoNoBloom = true;
+      } else if (this.fpsCap > 30) {
+        this.fpsCap = 30; // kept for the session: a device that needed it once will again
       } else if (!this.degraded) {
         this.degraded = true;
         this.resize(true);
@@ -312,9 +329,10 @@ export class Renderer {
       const fps = Math.round((this.frames * 1000) / (now - this.statT || 1));
       this.frames = 0;
       this.statT = now;
-      this.onStats?.({ fps, cols: this.field.cols, rows: this.field.rows, degraded: this.degraded || this.autoNoBloom });
+      this.onStats?.({ fps, cols: this.field.cols, rows: this.field.rows, degraded: this.degraded || this.autoNoBloom || this.fpsCap < MAX_FPS });
     }
   }
+
 
   draw(time) {
     if (!this.palette || !this.atlas.width) return;
@@ -330,7 +348,7 @@ export class Renderer {
     }
 
     const ctx = this.ctx;
-    const { tw, th, atlas, gx, gb } = this;
+    const { tw, th, atlas, gx, gb, hueW } = this;
     if (!gx) return;
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
@@ -348,7 +366,7 @@ export class Renderer {
           if (g === RAMP_IDX[0]) continue;
         }
         const l = Math.min(LEVELS - 1, (v * LEVELS) | 0);
-        ctx.drawImage(atlas, gx[g], (gb[g] + H[i] * LEVELS + l) * th, tw, th, x * tw, py, tw, th);
+        ctx.drawImage(atlas, gx[g] + H[i] * hueW, (gb[g] + l) * th, tw, th, x * tw, py, tw, th);
       }
     }
 

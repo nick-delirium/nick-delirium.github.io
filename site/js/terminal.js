@@ -88,6 +88,7 @@ export function initTerminal(ctx) {
         ["open <name>", "github · dolly · notalearn · repo · …"],
         ["git log", "career, as commits"],
         ["neofetch", "system info"],
+        ["sys", "display settings panel"],
         ["theme [name]", "night-city · neon-noir · phosphor · smog"],
         ["layout [name]", "split · window · bg"],
         ["res [level]", "ultra · hi · med · lo"],
@@ -208,6 +209,10 @@ city    Paris, France (CET)`);
     },
     scenes() {
       print(ctx.sceneIds.map((s) => cmd("scene " + s, s)).join("  "));
+    },
+    sys() {
+      toggle(false);
+      ctx.openSys();
     },
     print() {
       toggle(false);

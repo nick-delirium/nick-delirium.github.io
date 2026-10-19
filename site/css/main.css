@@ -2251,3 +2251,22 @@ button {
 [data-layout="bg"] .corner {
   display: none;
 }
+
+/* touch screens: drop the decorative layers that make mobile compositors work hardest */
+@media (hover: none), (pointer: coarse) {
+  body::before {
+    display: none;
+  }
+  .topbar,
+  .sys,
+  .term,
+  [data-layout="bg"] .page-inner {
+    backdrop-filter: none;
+  }
+  .topbar {
+    background: var(--bg);
+  }
+}
+#btn-sys[hidden] {
+  display: none;
+}

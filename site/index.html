@@ -27,7 +27,9 @@
       const d = document.documentElement;
       d.dataset.theme = q.get("theme") || s.theme || "night-city";
       d.dataset.layout = q.get("layout") || s.layout || "split";
-      if (s.crt === false) d.classList.add("no-crt");
+      // CRT overlay is off by default on touch screens (matches the defaults in main.js)
+      const touch = !matchMedia("(hover: hover) and (pointer: fine)").matches;
+      if (s.crt === false || ((s.v !== 2 || s.crt === undefined) && touch)) d.classList.add("no-crt");
     } catch (e) {}
     document.documentElement.classList.add("js");
   </script>
@@ -80,7 +82,7 @@
     <div class="top-tools">
       <span class="clock" title="Paris local time"><i>PAR</i> <span id="clock">--:--:--</span></span>
       <button class="tool-btn" id="btn-term" type="button" title="Terminal ( ` )" aria-label="Open terminal">&gt;_</button>
-      <button class="tool-btn tool-sys" id="btn-sys" type="button" aria-expanded="false" aria-controls="sys" title="Display settings">SYS</button>
+      <button class="tool-btn tool-sys" id="btn-sys" type="button" aria-expanded="false" aria-controls="sys" title="Display settings" hidden>SYS</button>
     </div>
     <div class="progress" aria-hidden="true"><i id="progress"></i></div>
   </header>

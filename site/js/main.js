@@ -16,11 +16,13 @@ export const THEMES = ["night-city", "neon-noir", "phosphor", "smog"];
 export const LAYOUTS = ["split", "window", "bg"];
 export const RESES = ["ultra", "hi", "med", "lo"];
 const FX = ["crt", "bloom", "glitch", "lens", "motion"];
+// v2: "ultra" became the default density, and touch devices skip the costly overlays by default
+const SETTINGS_VERSION = 2;
 const defaults = {
   theme: "night-city",
   layout: "split",
-  res: mobile ? "med" : "hi",
-  crt: true,
+  res: "ultra",
+  crt: finePointer,
   bloom: true,
   glitch: true,
   lens: true,
@@ -40,7 +42,13 @@ const store = {
     } catch {}
   },
 };
-const settings = { ...defaults, ...store.get("nd.settings", {}) };
+const saved = store.get("nd.settings", {});
+if (saved.v !== SETTINGS_VERSION) {
+  // stored defaults from older versions would otherwise pin visitors to the old values
+  delete saved.res;
+  delete saved.crt;
+}
+const settings = { ...defaults, ...saved, v: SETTINGS_VERSION };
 const query = new URLSearchParams(location.search);
 for (const k of ["theme", "layout", "res"]) if (query.get(k)) settings[k] = query.get(k);
 
@@ -250,7 +258,7 @@ function setupExperience() {
 const exp = setupExperience();
 
 /* ═════════════ scenes: scroll-spy, hover, pin ═════════════ */
-let spyScene = "city", hoverScene = null, pinScene = null, currentId = null;
+let spyScene = $("main > section")?.dataset.scene, hoverScene = null, pinScene = null, currentId = null;
 
 async function show(id) {
   if (!id || id === currentId) return;
@@ -273,15 +281,38 @@ export function pin(id) {
   return pinScene;
 }
 
-const spyEls = $$("[data-scene]").filter((el) => !el.closest(".exp-slides") && (!finePointer || !el.hasAttribute("data-scene-hover")));
+// on touch screens cards and hobby rows drive the scene as they scroll past; single book titles are too small to
+const spyEls = $$("[data-scene]").filter(
+  (el) => !el.closest(".exp-slides") && !el.matches(".hb-t") && (!finePointer || !el.hasAttribute("data-scene-hover"))
+);
 const sections = $$("main > section");
 const navLinks = new Map($$("[data-nav]").map((a) => [a.dataset.nav, a]));
 const progress = $("#progress");
 let lastOn = null, lastNav = null;
 
+// The focus line sits 42% down the part of the screen the text lives in. On phones the animation band
+// covers the top of the viewport, so the line starts below it.
+function focusLine() {
+  const v = viz.getBoundingClientRect();
+  const top = v.width >= innerWidth * 0.9 && v.top < innerHeight * 0.3 && v.bottom < innerHeight * 0.7 ? v.bottom : 0;
+  return top + (innerHeight - top) * 0.42;
+}
+let spyTimer = 0;
+function setSpyScene(id) {
+  if (id === spyScene) return clearTimeout(spyTimer);
+  // touch scrolling sweeps past many cards: only switch once one has settled under the line
+  clearTimeout(spyTimer);
+  const apply = () => {
+    spyScene = id;
+    resolveScene();
+  };
+  if (finePointer) apply();
+  else spyTimer = setTimeout(apply, 220);
+}
+
 function spy() {
   exp.sync();
-  const fy = innerHeight * 0.42;
+  const fy = focusLine();
   let best = null, bestH = Infinity;
   for (const el of spyEls) {
     const r = el.getBoundingClientRect();
@@ -290,16 +321,15 @@ function spy() {
       bestH = r.height;
     }
   }
-  if (best) {
-    spyScene = best === exp.section ? exp.scene() : best.dataset.scene;
-    if (best !== lastOn) {
-      lastOn?.classList.remove("on");
-      if (best.matches(".entry, .hobbies li")) best.classList.add("on");
-      lastOn = best;
-    }
-  }
   let sec = sections[0];
   for (const s of sections) if (s.getBoundingClientRect().top <= fy) sec = s;
+  if (!best) best = sec; // nothing under the line yet (e.g. above the first section): use the nearest one
+  setSpyScene(best === exp.section ? exp.scene() : best.dataset.scene);
+  if (best !== lastOn) {
+    lastOn?.classList.remove("on");
+    if (best.matches(".card, .entry, .hobbies li")) best.classList.add("on");
+    lastOn = best;
+  }
   const link = navLinks.get(sec.id);
   if (link !== lastNav) {
     lastNav?.classList.remove("on");
@@ -350,12 +380,12 @@ const sys = $("#sys");
 const sysBtn = $("#btn-sys");
 function toggleSys(open = sys.hidden) {
   sys.hidden = !open;
-  sysBtn.setAttribute("aria-expanded", String(open));
+  sysBtn?.setAttribute("aria-expanded", String(open));
 }
-sysBtn.addEventListener("click", () => toggleSys());
+sysBtn?.addEventListener("click", () => toggleSys());
 $(".sys-x").addEventListener("click", () => toggleSys(false));
 document.addEventListener("pointerdown", (e) => {
-  if (!sys.hidden && !sys.contains(e.target) && !sysBtn.contains(e.target)) toggleSys(false);
+  if (!sys.hidden && !sys.contains(e.target) && !e.target.closest("#term")) toggleSys(false);
 });
 sys.addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -537,6 +567,7 @@ $("#btn-print").addEventListener("click", printCV);
 /* ═════════════ terminal + keys ═════════════ */
 const term = initTerminal({
   settings,
+  openSys: () => toggleSys(true),
   navigate: (id) => {
     exp.suppress(1600);
     document.getElementById(id)?.scrollIntoView({ behavior: settings.motion ? "smooth" : "auto" });
@@ -589,5 +620,5 @@ const typed = $(".typed");
 if (typed) typeOut(typed);
 if (!store.get("nd.seen", false)) {
   store.set("nd.seen", true);
-  setTimeout(() => toast("◢ <b>SYS</b> (top right) → 4 themes × 3 layouts &nbsp;·&nbsp; <b>`</b> → terminal", 6000), 900);
+  if (finePointer) setTimeout(() => toast("◢ press <b>`</b> for a terminal &nbsp;·&nbsp; try <b>sys</b> or <b>help</b>", 6000), 900);
 }
