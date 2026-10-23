@@ -72,6 +72,11 @@ const renderer = new Renderer($("#ascii"), $(".viz-stage"), {
   },
 });
 
+// The first page has no animation window: fish swim in a full-page pond behind it instead.
+const pondEl = $("#pond");
+const pond = new Renderer($("#pond canvas"), pondEl);
+pond.transitions = false;
+
 function palette() {
   const cs = getComputedStyle(root);
   const v = (n) => cs.getPropertyValue(n).trim();
@@ -99,9 +104,16 @@ function apply() {
   const tc = $('meta[name="theme-color"]');
   if (tc) tc.content = getComputedStyle(root).getPropertyValue("--bg").trim();
 
-  if (applied.theme !== settings.theme) renderer.setPalette(palette());
-  if (applied.res !== settings.res) renderer.setRes(settings.res);
+  if (applied.theme !== settings.theme) {
+    renderer.setPalette(palette());
+    pond.setPalette(palette());
+  }
+  if (applied.res !== settings.res) {
+    renderer.setRes(settings.res);
+    pond.setRes(settings.res);
+  }
   renderer.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
+  pond.setOptions({ bloom: settings.bloom, lens: false, motion: settings.motion });
 
   $$("[data-set-theme]").forEach((b) => b.classList.toggle("on", b.dataset.setTheme === settings.theme));
   $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === layout));
@@ -281,6 +293,7 @@ const resolveScene = () => show(pinScene || hoverScene || spyScene);
 
 export function pin(id) {
   pinScene = id && SCENE_IDS.includes(id) ? id : null;
+  updateHero();
   resolveScene();
   return pinScene;
 }
@@ -314,8 +327,51 @@ function setSpyScene(id) {
   else spyTimer = setTimeout(apply, 220);
 }
 
+/* ═════════════ first page: pond ↔ animation window ═════════════ */
+// While the first page fills the screen the window stays hidden and the pond runs. Scrolling past
+// ~45% of it opens the window and sends the fish off-screen; the pond stops once they're gone.
+let heroMode = null, fishScene = null;
+function updateHero() {
+  const r = sections[0].getBoundingClientRect();
+  const inHero = !pinScene && r.bottom > innerHeight * 0.55;
+  if (inHero === heroMode) return;
+  heroMode = inHero;
+  root.classList.toggle("hero-mode", inHero);
+  renderer.suspended = inHero;
+  renderer.kick(true);
+  if (!fishScene) return;
+  fishScene.flee = !inHero;
+  if (!inHero && !settings.motion) {
+    // nothing animates, so the fish can't swim off: just fade the pond
+    pondEl.classList.add("gone");
+    pond.suspended = true;
+  }
+  if (inHero) {
+    pondEl.classList.remove("gone");
+    pond.suspended = false;
+    pond.kick();
+  }
+}
+loadScene("fish").then((scene) => {
+  fishScene = scene;
+  scene.onGone = () => {
+    if (heroMode) return;
+    pondEl.classList.add("gone");
+    pond.suspended = true;
+  };
+  pond.setScene(scene);
+  heroMode = null;
+  updateHero();
+  if (!heroMode) {
+    // landed mid-page (reload, deep link): no fish to chase away
+    pondEl.classList.add("gone");
+    pond.suspended = true;
+  }
+});
+
 function spy() {
   exp.sync();
+  updateHero();
   const fy = focusLine();
   let best = null, bestH = Infinity;
   for (const el of spyEls) {
@@ -617,7 +673,10 @@ const fontsReady = Promise.race([
   Promise.all([document.fonts?.load('12px "JetBrains Mono"'), document.fonts?.load('700 16px "Noto Sans JP"', "ラ")]),
   sleep(2200),
 ]);
-fontsReady.then(() => renderer.setPalette(palette()));
+fontsReady.then(() => {
+  renderer.setPalette(palette());
+  pond.setPalette(palette());
+});
 await boot();
 setupTitleDecode();
 const typed = $(".typed");

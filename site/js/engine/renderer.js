@@ -45,6 +45,8 @@ export class Renderer {
     this.lens = true;
     this.motion = true;
     this.paused = false;
+    this.suspended = false; // owner-controlled stop (e.g. a layer that is currently hidden)
+    this.transitions = true; // the decode effect on scene changes
     this.visible = true;
     this.input = { x: -999, y: -999, inside: false, vx: 0, vy: 0, down: false, shocks: [] };
     this.frames = 0;
@@ -272,7 +274,7 @@ export class Renderer {
 
   /** (re)start the loop if it should be running; draw once if forced */
   kick(force = false) {
-    const should = this.scene && this.visible && !document.hidden && !this.paused && this.motion;
+    const should = this.scene && this.visible && !document.hidden && !this.paused && !this.suspended && this.motion;
     if (should && !this.raf) {
       this.last = performance.now();
       this.raf = requestAnimationFrame(this.loop);
@@ -283,7 +285,7 @@ export class Renderer {
 
   loop(now) {
     this.raf = 0;
-    const should = this.scene && this.visible && !document.hidden && !this.paused && this.motion;
+    const should = this.scene && this.visible && !document.hidden && !this.paused && !this.suspended && this.motion;
     if (!should) return;
     if (now - this.last < 1000 / this.fpsCap - 2) {
       this.raf = requestAnimationFrame(this.loop);
@@ -395,7 +397,7 @@ export class Renderer {
     const inp = this.input;
     inp.shocks = inp.shocks.filter((s) => time - s.t < 1.4);
     const lensOn = this.lens && inp.inside && this.motion;
-    const trans = this.motion && this.sceneT < TRANSITION;
+    const trans = this.motion && this.transitions && this.sceneT < TRANSITION;
     if (!lensOn && !inp.shocks.length && !trans) return false;
 
     const sV = f.v, sH = f.h, sG = f.g;

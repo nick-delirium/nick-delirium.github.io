@@ -26,6 +26,8 @@
       const q = new URLSearchParams(location.search);
       const d = document.documentElement;
       d.dataset.theme = q.get("theme") || s.theme || "night-city";
+      // the animation window stays hidden on the first page (fish swim there instead); main.js corrects this after load
+      if (!q.has("scene")) d.classList.add("hero-mode");
       d.dataset.layout = q.get("layout") || (matchMedia("(max-width: 860px)").matches ? "bg" : s.layout) || "split";
       // CRT overlay is off by default on touch screens (matches the defaults in main.js)
       const touch = !matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -131,6 +133,9 @@
       <button type="button" id="btn-term2">terminal</button>
     </div>
   </aside>
+
+  <!-- ───────── first-page pond: fish behind the page until you scroll ───────── -->
+  <div id="pond" aria-hidden="true"><canvas></canvas></div>
 
   <!-- ───────── ascii viewport ───────── -->
   <aside id="viz" aria-hidden="true">

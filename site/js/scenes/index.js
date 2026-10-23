@@ -39,6 +39,7 @@ const LOADERS = {
   solaris: () => import("./solaris.js"),
   sauron: () => import("./sauron.js"),
   llm: () => import("./llm.js"),
+  fish: () => import("./fish.js"),
   fleet: () => import("./fleet.js"),
   cosmos: () => import("./cosmos.js"),
   sigils: () => import("./sigils.js"),
