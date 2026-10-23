@@ -3,7 +3,7 @@
 
 import { Field, GLYPHS, RAMP_IDX, RAMP_LEN, G, hash1, SLICES, GLYPH_COUNT, CJK_FONT } from "./util.js";
 
-export const RES = { ultra: 4, hi: 5, med: 6, lo: 8, pond: 10, pondS: 7 }; // cell width in css px
+export const RES = { ultra: 4, hi: 5, med: 6, lo: 8, pond: 7, pondS: 5 }; // cell width in css px
 const LEVELS = 8;
 const HUES = 5;
 const ATLAS_MAX = 4096; // texture limit to stay under on mobile GPUs
