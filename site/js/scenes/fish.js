@@ -9,13 +9,19 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 const N = 22; // spine samples, head → tail
 
+// Koi keep their natural colours whatever the site theme: these are added to the renderer's palette
+// as hues 5… (see extraHues below). Light colours carry dark symbols, dark colours light ones.
+const C = { ivory: 5, red: 6, ink: 7, blue: 8, white: 9, yellow: 10, black: 11 };
+const EXTRA_HUES = ["#efe9dd", "#d93a2b", "#1a1718", "#2f6fd0", "#e9f0f8", "#f2c418", "#121214"];
+const LIGHT = new Set([C.ivory, C.white, C.yellow]);
+
 const KINDS = [
-  // kohaku koi in katakana: white with red patches
-  { glyphs: Array.from("ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ"), hue: HUE.white, accent: HUE.hot, koi: true },
-  // a fish spelled in letters
-  { glyphs: Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZabdefghijkmnpqrstuvwyz"), hue: HUE.alt, accent: HUE.white },
-  // and one in assorted symbols
-  { glyphs: Array.from("§¶†‡±√∂∑∆∫≠≈≡∞※¤#%&@$*+=<>{}[]?!"), hue: HUE.main, accent: HUE.white },
+  // kohaku in katakana: ivory white with red patches and a red head spot
+  { glyphs: Array.from("ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ"), base: C.ivory, patch: C.red, cover: 0.08, head: true, fin: C.ivory, finRoot: C.ivory, line: C.ivory },
+  // in letters: blue with white patches and white fins
+  { glyphs: Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZabdefghijkmnpqrstuvwyz"), base: C.blue, patch: C.white, cover: 0.3, fin: C.white, finRoot: C.white, line: C.white },
+  // in symbols: yellow with black (sumi) patches, black at the base of the fins
+  { glyphs: Array.from("§¶†‡±√∂∑∆∫≠≈≡∞※¤#%&@$*+=<>{}[]?!"), base: C.yellow, patch: C.black, cover: 0.18, fin: C.yellow, finRoot: C.black, line: C.yellow },
 ].map((k) => ({ ...k, ids: k.glyphs.map(G) }));
 
 let openPond = false; // the last page: no text, so no keep-right zone
@@ -371,7 +377,7 @@ function drawFish(fl, f, t) {
           nqy = qy;
         }
       }
-      let v = 0, bg = 0, part = 0, edge = -1, enx = 0, eny = 0, thin = false;
+      let v = 0, bg = 0, part = 0, edge = -1, enx = 0, eny = 0, thin = false, fp_last = 0;
       if (d <= w + 0.15) {
         if (w + 0.15 - d < 0.8) {
           // a contour stroke, unless a fin carries on past this edge (that would read as a seam)
@@ -389,9 +395,9 @@ function drawFish(fl, f, t) {
         }
         const lat = Math.min(1, d / (w || 1));
         const z = Math.sqrt(Math.max(0, 1 - lat * lat));
-        v = 0.32 + 0.5 * z;
-        bg = 0.3 + 0.62 * z;
-        if (bs > 0.2 && bs < 0.68 && lat < 0.26) v = Math.min(1, v + 0.18); // dorsal ridge
+        v = 0.6 + 0.4 * z;
+        bg = 0.74 + 0.24 * z; // rounded: full colour along the back, a touch darker toward the flanks
+        if (bs > 0.2 && bs < 0.68 && lat < 0.26) bg = Math.min(1, bg + 0.03); // dorsal ridge
         part = 1;
       } else {
         let fp = 0;
@@ -400,8 +406,9 @@ function drawFish(fl, f, t) {
           fp = finAt(px, py, FINS[o], FINS[o + 1], FINS[o + 2], FINS[o + 3], FINS[o + 4], FINS[o + 5]);
         }
         if (!fp) continue;
-        v = 0.2 + 0.32 * fp;
-        bg = 0.14 + 0.42 * fp;
+        fp_last = fp;
+        v = 0.45 + 0.35 * fp;
+        bg = 0.16 + 0.34 * fp; // fins and tail are translucent
         part = 2;
         if (FE.margin < 0.8) {
           edge = 1;
@@ -411,24 +418,30 @@ function drawFish(fl, f, t) {
         }
       }
 
-      // colour: kohaku patches on the koi (white glyphs on red blocks), a pale spine on the others
+      // colour: the body takes the base colour with patches from noise on the skin (they move with
+      // the fish); fins are translucent, with a darker root on the yellow one
       const lu = bs * L, lv = side * d;
-      let hue = k.hue, bh = k.hue;
-      if (k.koi) {
-        if (part === 1 && (noise2(lu * 0.15 + f.seed, lv * 0.3 + f.seed * 0.7) > 0.08 || (bs < 0.13 && f.redHead))) bh = k.accent;
-      } else if (part === 1 && d / (w || 1) < 0.3 && bs > 0.12 && bs < 0.8) {
-        hue = k.accent;
+      let bh = k.base;
+      if (part === 1) {
+        const n = noise2(lu * 0.15 + f.seed, lv * 0.3 + f.seed * 0.7);
+        if (n > k.cover || (k.head && bs < 0.13 && f.redHead)) bh = k.patch;
+      } else {
+        bh = fp_last > 0.72 ? k.finRoot : k.fin;
       }
+      // symbols are carved into the colour: dark on light solid blocks, light on dark or translucent ones
+      let hue = LIGHT.has(bh) && bg >= 0.45 ? C.ink : bh === C.black || bh === C.red || bh === C.blue ? k.line : bh;
+      if (hue === C.ink) v = 1;
 
       // glyphs stick to the body (they swim along with it); a few shimmer
       const gi = Math.floor(lu * 1.05) * 73 + Math.floor(lv * 1.6) * 31 + f.seedI;
       const flick = hash1(gi * 7 + 3) < 0.06 ? tick : 0;
       let idx = ids[(hash1(gi + flick * 977) * nG) | 0];
       if (edge > 0) {
-        // the silhouette is drawn in thin strokes that follow the contour
+        // the silhouette is drawn in thin strokes that follow the contour, in the fish's light colour
         idx = thin ? (eny > 0 ? G_TICK : G_DOT) : edgeGlyph(enx, eny);
-        v = v * 0.8 + 0.08;
-        bg *= 0.35;
+        hue = k.line;
+        v = 0.55 + 0.25 * (v > 0.5 ? 1 : 0);
+        bg *= 0.2;
       }
       const o = cy * cols + cx;
       if (v > V[o]) {
@@ -446,8 +459,8 @@ function drawFish(fl, f, t) {
   for (const sd of [1, -1]) {
     const ex = Math.round(SX[2] + NX[2] * w0 * 0.5 * sd - 0.5), ey = Math.round((SY[2] + NY[2] * w0 * 0.5 * sd) * ax - 0.5);
     if (ex < 0 || ey < 0 || ex >= cols || ey >= rows) continue;
-    fl.set(ex, ey, 1, HUE.white, G("●"));
-    B[ey * cols + ex] = 0;
+    const o = ey * cols + ex;
+    fl.set(ex, ey, 1, LIGHT.has(BH[o]) && B[o] > 0.4 ? C.ink : HUE.white, G("●"));
   }
 }
 
@@ -468,6 +481,7 @@ export default {
   id: "fish",
   title: "KOI_POND",
   caption: "three fish and a little wake",
+  extraHues: EXTRA_HUES,
   flee: false,
   open: false,
   onGone: null,

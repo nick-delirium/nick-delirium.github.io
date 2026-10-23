@@ -5,7 +5,8 @@ import { Field, GLYPHS, RAMP_IDX, RAMP_LEN, G, hash1, SLICES, GLYPH_COUNT, CJK_F
 
 export const RES = { ultra: 4, hi: 5, med: 6, lo: 8, pond: 7, pondS: 5 }; // cell width in css px
 const LEVELS = 8;
-const HUES = 5;
+const THEME_HUES = 5; // fg, main, alt, hot, white from the theme; a scene may add its own after these
+const FILLS = 16; // steps of cell-background opacity
 const ATLAS_MAX = 4096; // texture limit to stay under on mobile GPUs
 const MAX_FPS = 60; // ProMotion screens would otherwise run every scene at 120
 const FONT = '"JetBrains Mono", ui-monospace, Menlo, "Noto Sans JP", "Hiragino Sans", monospace';
@@ -104,10 +105,12 @@ export class Renderer {
   }
 
   setPalette(p) {
+    this.theme = p;
     this.palette = {
       bg: parseColor(p.bg),
-      hues: [p.fg, p.main, p.alt, p.hot, p.white].map(parseColor),
+      hues: [p.fg, p.main, p.alt, p.hot, p.white, ...(this.extraHues || [])].map(parseColor),
     };
+    this.nHues = this.palette.hues.length;
     this.buildAtlas();
     this.kick(true);
   }
@@ -126,6 +129,12 @@ export class Renderer {
 
   setScene(scene) {
     if (!scene || scene === this.scene) return;
+    // scenes can bring fixed colours of their own (hue indices 5, 6, …), independent of the theme
+    const extra = scene.extraHues || [];
+    if (extra.join() !== (this.extraHues || []).join()) {
+      this.extraHues = extra;
+      if (this.theme) this.setPalette(this.theme);
+    }
     this.scene = scene;
     this.sceneT = 0;
     // the eco fallback is per scene: a heavy scene (or a busy moment) must not degrade the next one
@@ -197,6 +206,7 @@ export class Renderer {
     if (!this.tw || !this.palette) return;
     const { tw, th, atlas } = this;
     // glyphs per atlas row: as many as fit while all hue bands together stay under the texture limit
+    const HUES = this.nHues || THEME_HUES;
     const ATLAS_COLS = Math.max(16, Math.floor(ATLAS_MAX / (HUES * tw)));
     this.atlasCols = ATLAS_COLS;
     const blocks = Math.ceil(this.glyphCount / ATLAS_COLS);
@@ -275,11 +285,11 @@ export class Renderer {
       this.gx[g] = (g % ATLAS_COLS) * tw;
       this.gb[g] = ((g / ATLAS_COLS) | 0) * LEVELS;
     }
-    // cell background fills: a faint tint of each hue, LEVELS steps
+    // cell background fills: each hue blended over the page background, from faint to solid
     this.bgFill = [];
     for (let h = 0; h < HUES; h++) {
-      for (let l = 0; l < LEVELS; l++) {
-        const c = mix(bg, hues[h], 0.05 + 0.4 * (l / (LEVELS - 1)));
+      for (let l = 0; l < FILLS; l++) {
+        const c = mix(bg, hues[h], l / (FILLS - 1));
         this.bgFill.push(`rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
       }
     }
@@ -374,7 +384,7 @@ export class Renderer {
         for (let x = 0; x < cols; x++, i++) {
           const b = B[i];
           if (b < 0.03) continue;
-          ctx.fillStyle = fills[BH[i] * LEVELS + Math.min(LEVELS - 1, (b * LEVELS) | 0)];
+          ctx.fillStyle = fills[BH[i] * FILLS + Math.min(FILLS - 1, Math.round(b * (FILLS - 1)))];
           ctx.fillRect(x * tw, y * th, tw, th);
         }
       }
