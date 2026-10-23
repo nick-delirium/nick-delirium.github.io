@@ -8,7 +8,6 @@ import { HUE, clamp, noise2, hash1, rng, G, TAU } from "../engine/util.js";
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 const N = 22; // spine samples, head → tail
-const STEP = 0.45; // trail sampling distance (cell widths)
 
 const KINDS = [
   // kohaku koi in katakana: white with red patches
@@ -54,7 +53,7 @@ function finAt(px, py, rx, ry, dx, dy, len, wid) {
 function spawn(i, fromEdge) {
   const k = KINDS[i % KINDS.length];
   // narrow portrait screens get relatively bigger fish (sized from the width)
-  const L = clamp(Math.min(W, Hp) * (Hp > W * 1.2 ? 0.34 : 0.23 + R() * 0.04) - i * 2, 14, 60);
+  const L = clamp(Math.min(W, Hp) * (Hp > W * 1.2 ? 0.3 : 0.23 + R() * 0.04) - i * 2, 14, 60);
   let x, y, h;
   const wide = W > Hp * 1.2 && !openPond;
   if (fromEdge) {
@@ -68,9 +67,7 @@ function spawn(i, fromEdge) {
     y = Hp * (0.2 + R() * 0.6);
     h = R() * TAU;
   }
-  const trail = [];
-  for (let d = Math.ceil(L / STEP) + 4; d >= 0; d--) trail.push([x - Math.cos(h) * d * STEP, y - Math.sin(h) * d * STEP]);
-  const f = { k, L, w0: L * 0.15, x, y, h, v: L * (0.17 + R() * 0.06), burst: fromEdge ? 1.6 : 0, trail, phase: R() * TAU, seed: R() * 100, seedI: (R() * 1e6) | 0, redHead: R() < 0.7, ripT: R(), out: false, scare: 0, scareAng: 0, sx: new Float32Array(N), sy: new Float32Array(N) };
+  const f = { k, L, w0: L * 0.15, x, y, h, v: L * (0.17 + R() * 0.06), burst: fromEdge ? 1.6 : 0, tr: 0, brakeS: 1, avSide: 1, speed: 0, phase: R() * TAU, seed: R() * 100, seedI: (R() * 1e6) | 0, redHead: R() < 0.7, ripT: R(), out: false, scare: 0, scareAng: 0, sx: new Float32Array(N), sy: new Float32Array(N) };
   spine(f); // others steer around this body from the first step
   return f;
 }
@@ -112,7 +109,11 @@ function step(f, t, dt, input, flee) {
         const zone = clear * (ahead ? 1.4 : 1.8);
         if (d < zone) {
           const k = 1 - d / zone;
-          avoid += clamp(wrap(Math.atan2(f.y + sh * ahead - by, f.x + ch * ahead - bx) - f.h), -1, 1) * 4.5 * k * k;
+          // steer away from the body; when it's almost dead ahead keep the side already chosen,
+          // so the turn doesn't flip left/right from one frame to the next
+          const diff = wrap(Math.atan2(f.y + sh * ahead - by, f.x + ch * ahead - bx) - f.h);
+          if (Math.abs(diff) < 2.6) f.avSide = diff >= 0 ? 1 : -1;
+          avoid += f.avSide * Math.min(1, Math.abs(diff)) * 4.5 * k * k;
           if (ahead) brake = Math.min(brake, 0.45 + 0.55 * (1 - k));
         }
       }
@@ -149,38 +150,17 @@ function step(f, t, dt, input, flee) {
   }
   f.burst *= Math.exp(-dt * 1.5);
   const cruise = f.v * (1 + f.burst * 2.2) * (0.85 + 0.3 * (noise2(f.seed + 9, t * 0.4) * 0.5 + 0.5));
-  const v = cruise * (f.brake ?? 1) + (Math.max(W, Hp) * 0.75 - cruise) * (f.flee || 0) * (f.flee || 0);
-  // a koi can't turn tighter than about 0.4 body lengths (faster when darting)
+  f.brakeS += ((f.brake ?? 1) - f.brakeS) * (1 - Math.exp(-dt * 3)); // ease into and out of braking
+  const v = cruise * f.brakeS + (Math.max(W, Hp) * 0.75 - cruise) * (f.flee || 0) * (f.flee || 0);
+  // a koi can't turn tighter than about 0.4 body lengths (faster when darting), and it eases
+  // into a turn rather than snapping to it
   const maxTurn = Math.max(0.45, v / (f.L * 0.4));
-  f.h += clamp(turn, -maxTurn, maxTurn) * dt;
+  f.tr += (clamp(turn, -maxTurn, maxTurn) - f.tr) * (1 - Math.exp(-dt * 5));
+  f.h += f.tr * dt;
   f.x += Math.cos(f.h) * v * dt;
   f.y += Math.sin(f.h) * v * dt;
+  f.speed = v;
   f.phase += dt * (3 + v * 0.35);
-  const last = f.trail[f.trail.length - 1];
-  if (Math.hypot(f.x - last[0], f.y - last[1]) >= STEP) {
-    f.trail.push([f.x, f.y]);
-    if (f.trail.length > Math.ceil(f.L / STEP) + 8) f.trail.shift();
-  }
-  // never through each other: if any part of this body touches another, push this fish out
-  if (!flee) {
-    for (const o of fish) {
-      if (o === f || o.out) continue;
-      const touch = (f.w0 + o.w0) * 0.85;
-      let px = 0, py = 0, depth = 0;
-      for (let p = 0; p < N; p += 3) {
-        const [d, bx, by] = nearestOnBody(o, f.sx[p], f.sy[p]);
-        if (d < touch && touch - d > depth) {
-          depth = touch - d;
-          px = (f.sx[p] - bx) / (d || 1);
-          py = (f.sy[p] - by) / (d || 1);
-        }
-      }
-      if (depth > 0) {
-        f.x += px * Math.min(depth, 1) * 0.7;
-        f.y += py * Math.min(depth, 1) * 0.7;
-      }
-    }
-  }
   f.ripT -= dt * (0.9 + f.burst);
   if (f.ripT <= 0 && !f.out) {
     f.ripT = 0.7 + R() * 0.6;
@@ -190,48 +170,42 @@ function step(f, t, dt, input, flee) {
   f.out = f.x < -margin || f.x > W + margin || f.y < -margin || f.y > Hp + margin;
 }
 
-/** walk the trail back from the head to place the spine, then add the swimming wave */
-function spine(f) {
-  const tr = f.trail;
-  let j = tr.length - 1, px = f.x, py = f.y, acc = 0;
-  SX[0] = px;
-  SY[0] = py;
-  for (let i = 1; i < N; i++) {
-    const want = (i / (N - 1)) * f.L;
-    while (j > 0) {
-      const qx = tr[j - 1][0], qy = tr[j - 1][1];
-      const seg = Math.hypot(qx - px, qy - py);
-      if (acc + seg >= want) {
-        const u = (want - acc) / (seg || 1);
-        px += (qx - px) * u;
-        py += (qy - py) * u;
-        acc = want;
-        break;
-      }
-      acc += seg;
-      px = qx;
-      py = qy;
-      j--;
-    }
-    SX[i] = px;
-    SY[i] = py;
-  }
-  // bones: rebuild from the head with limited bend per segment. The front two thirds can only
-  // bend a few degrees in total; nearly all the flex is in the tail.
-  const seg = f.L / (N - 1);
-  let prev = f.h + Math.PI;
+/** Body from the current pose: the axis bends into the turn the way a fish swimming an arc does
+ * (angle at distance d behind the head lags by turnRate·d/speed), with the bend carried mostly by
+ * the tail since the front is stiff. Straight swimming gives a straight axis, so the swimming wave
+ * on top of it is symmetric. */
+const BEND = new Float32Array(N); // cumulative share of the total bend reached at each segment
+{
+  let acc = 0;
   for (let i = 0; i < N - 1; i++) {
-    const sNorm = i / (N - 1);
-    const maxBend = sNorm < 0.62 ? 0.022 : 0.085;
-    const raw = Math.atan2(SY[i + 1] - SY[i], SX[i + 1] - SX[i]);
-    const a = prev + clamp(wrap(raw - prev), -maxBend, maxBend);
+    const sMid = (i + 0.5) / (N - 1);
+    acc += sMid < 0.55 ? 0.3 : sMid < 0.7 ? 0.3 + 1.3 * ((sMid - 0.55) / 0.15) : 1.6;
+    BEND[i] = acc;
+  }
+  for (let i = 0; i < N - 1; i++) BEND[i] /= acc;
+}
+function normals() {
+  for (let i = 0; i < N; i++) {
+    const a = Math.max(0, i - 1), b = Math.min(N - 1, i + 1);
+    const tx = SX[a] - SX[b], ty = SY[a] - SY[b];
+    const l = Math.hypot(tx, ty) || 1;
+    NX[i] = -ty / l;
+    NY[i] = tx / l;
+  }
+}
+function spine(f) {
+  const seg = f.L / (N - 1);
+  const total = clamp((f.tr * f.L) / Math.max(f.speed || f.v, 1), -1.1, 1.1); // whole-body bend, radians
+  SX[0] = f.x;
+  SY[0] = f.y;
+  for (let i = 0; i < N - 1; i++) {
+    const a = f.h + Math.PI - total * BEND[i];
     SX[i + 1] = SX[i] + Math.cos(a) * seg;
     SY[i + 1] = SY[i] + Math.sin(a) * seg;
-    prev = a;
   }
   for (let i = 0; i < N; i++) {
     const a = Math.max(0, i - 1), b = Math.min(N - 1, i + 1);
-    let tx = SX[a] - SX[b], ty = SY[a] - SY[b];
+    const tx = SX[a] - SX[b], ty = SY[a] - SY[b];
     const l = Math.hypot(tx, ty) || 1;
     NX[i] = -ty / l;
     NY[i] = tx / l;
@@ -244,6 +218,52 @@ function spine(f) {
   }
   f.sx.set(SX);
   f.sy.set(SY);
+}
+
+/** Keep bodies apart. Each touching pair wants to drift apart along the contact normal (split 50/50,
+ * proportional to how deep they touch); every fish eases its own drift velocity toward that wish, so
+ * the correction ramps in and out smoothly instead of nudging on alternate frames. Whole bodies
+ * move (pose and drawn spine together), so nothing kinks. */
+function separate(dt) {
+  for (const F of fish) {
+    F.wx = 0;
+    F.wy = 0;
+  }
+  for (let a = 0; a < fish.length; a++) {
+    for (let b = a + 1; b < fish.length; b++) {
+      const A = fish[a], B = fish[b];
+      if (A.out || B.out) continue;
+      const touch = (A.w0 + B.w0) * 1.05; // start drifting apart just before bodies meet
+      let depth = 0, nx = 0, ny = 0;
+      for (let p = 0; p < N; p += 2) {
+        const [d, bx, by] = nearestOnBody(B, A.sx[p], A.sy[p]);
+        if (touch - d > depth) {
+          depth = touch - d;
+          nx = (A.sx[p] - bx) / (d || 1);
+          ny = (A.sy[p] - by) / (d || 1);
+        }
+      }
+      if (depth <= 0) continue;
+      const sp = Math.min(depth * 5, 14) / 2; // cells per second, each
+      A.wx += nx * sp;
+      A.wy += ny * sp;
+      B.wx -= nx * sp;
+      B.wy -= ny * sp;
+    }
+  }
+  const k = 1 - Math.exp(-dt * 8);
+  for (const F of fish) {
+    F.svx = (F.svx || 0) + (F.wx - (F.svx || 0)) * k;
+    F.svy = (F.svy || 0) + (F.wy - (F.svy || 0)) * k;
+    const dx = F.svx * dt, dy = F.svy * dt;
+    if (Math.abs(dx) + Math.abs(dy) < 1e-5) continue;
+    F.x += dx;
+    F.y += dy;
+    for (let p = 0; p < N; p++) {
+      F.sx[p] += dx;
+      F.sy[p] += dy;
+    }
+  }
 }
 
 // fin anchors along the body (fraction of the spine) and how far back they sweep
@@ -271,7 +291,7 @@ function drawFish(fl, f, t) {
   };
   const at = (s) => Math.min(N - 2, Math.round(s * (N - 1)));
   for (const sd of [1, -1]) {
-    const flap = Math.sin(f.phase * 0.9 + (sd > 0 ? 0 : 1.9));
+    const flap = Math.sin(f.phase * 0.9); // both sides together: a mirror image, not rowing on one side
     let i = at(PEC);
     let w = widthAt(PEC, w0) * 0.62;
     let back = Math.atan2(SY[i + 1] - SY[i], SX[i + 1] - SX[i]); // toward the tail
@@ -284,7 +304,8 @@ function drawFish(fl, f, t) {
     out = Math.atan2(NY[i] * sd, NX[i] * sd);
     put(SX[i] + NX[i] * w * sd, SY[i] + NY[i] * w * sd, blend(out, back, 0.6), w0 * 1.15 * fold, w0 * 0.36);
   }
-  const tail = Math.atan2(SY[N - 1] - SY[N - 4], SX[N - 1] - SX[N - 4]) + Math.sin(f.phase - 6.2) * 0.3;
+  // the caudal fin follows the wave a little behind the tail root, swinging evenly both ways
+  const tail = Math.atan2(SY[N - 1] - SY[N - 4], SX[N - 1] - SX[N - 4]) + Math.sin(f.phase - 5.6) * 0.22;
   for (const sd of [1, -1]) {
     const ang = tail + sd * 0.44;
     const lx = SX[N - 1] - Math.cos(tail) * w0 * 0.4, ly = SY[N - 1] - Math.sin(tail) * w0 * 0.4;
@@ -447,6 +468,7 @@ export default {
       for (let s = 0; s < 120; s++) {
         for (const fi of fish) step(fi, s / 30, 1 / 30, { inside: false }, false);
         for (const fi of fish) spine(fi);
+        separate(1 / 30);
       }
       ripples = [];
     } else {
@@ -455,10 +477,7 @@ export default {
       for (const fi of fish) {
         fi.x *= sx;
         fi.y *= sy;
-        for (const p of fi.trail) {
-          p[0] *= sx;
-          p[1] *= sy;
-        }
+        spine(fi);
       }
     }
     motes = Array.from({ length: Math.round((W * Hp) / 260) }, () => [R() * W, R() * Hp, R()]);
@@ -487,6 +506,8 @@ export default {
       }
     }
     for (const fi of fish) step(fi, t, dt, input, this.flee);
+    for (const fi of fish) spine(fi);
+    if (!this.flee) separate(dt);
 
     // water motes drifting
     for (const m of motes) {
@@ -514,7 +535,9 @@ export default {
     }
     for (const fi of fish) {
       if (fi.out) continue;
-      spine(fi);
+      SX.set(fi.sx);
+      SY.set(fi.sy);
+      normals();
       drawFish(f, fi, t);
     }
     if (this.flee && !gone && fish.every((fi) => fi.out)) {
