@@ -3,7 +3,7 @@
 // filled pectoral and pelvic fins that flap, and a forked tail that swings with the body wave.
 // They follow curving paths, leave ripples, shy from the cursor and scatter from clicks.
 // Set `flee` and they race off-screen; `onGone` fires once the pond is empty.
-import { HUE, clamp, noise2, hash1, rng, G, TAU } from "../engine/util.js";
+import { HUE, clamp, smooth, noise2, hash1, rng, G, TAU } from "../engine/util.js";
 
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -91,11 +91,18 @@ function step(f, t, dt, input, flee) {
   const ch = Math.cos(f.h), sh = Math.sin(f.h);
   // every behaviour adds a wish to turn; the total is capped by what a koi's body allows
   let turn = 0;
-  const toward = (ang, gain) => (turn += clamp(wrap(ang - f.h), -1, 1) * gain);
+  // steer toward an angle. When the target is almost straight behind, the shorter way round flips
+  // with every tiny wobble; each behaviour remembers which way it chose and keeps going that way.
+  const sides = (f.sides ||= {});
+  const toward = (ang, gain, key) => {
+    const d = wrap(ang - f.h);
+    if (Math.abs(d) < 2.4 || sides[key] === undefined) sides[key] = d >= 0 ? 1 : -1;
+    turn += sides[key] * Math.min(1, Math.abs(d)) * gain;
+  };
 
   if (flee) {
     // race for the nearest exit, fast enough to clear any screen in about a second
-    toward(Math.atan2(f.y - cy, f.x - cx), 4);
+    toward(Math.atan2(f.y - cy, f.x - cx), 4, "flee");
     f.flee = Math.min(1, (f.flee || 0) + dt * 1.6);
   } else {
     f.flee = 0;
@@ -119,39 +126,43 @@ function step(f, t, dt, input, flee) {
       }
     }
     f.brake = brake;
-    if (Math.abs(avoid) > 0.05) {
-      turn += avoid;
-    } else {
-      // wander: slow drift with a wide dead zone, so most of the time is spent swimming straight
-      const nz = noise2(f.seed, t * 0.09);
-      turn += Math.abs(nz) < 0.5 ? 0 : (nz - Math.sign(nz) * 0.5) * 2;
-      // look ahead and turn early instead of jerking away at the edge
-      const wide = W > Hp * 1.2;
-      const m = f.L * 0.45;
-      // keep right of the text only where there's room for it
-      const x0 = openPond ? m : W > Hp * 1.6 ? W * 0.37 : wide ? W * 0.22 : m, x1 = W - m, y0 = m, y1 = Hp - m;
-      const look = f.L * 1.2;
-      const lx = f.x + ch * look, ly = f.y + sh * look;
-      if (lx < x0 || lx > x1 || ly < y0 || ly > y1) toward(Math.atan2((y0 + y1) / 2 - f.y, (x0 + x1) / 2 - f.x), 1.4);
-    }
+    turn += avoid;
+    // the rest fades out while avoiding someone, rather than switching off abruptly
+    const calm = 1 - smooth(0.02, 0.5, Math.abs(avoid));
+    // wander: slow drift with a wide dead zone, so most of the time is spent swimming straight
+    const nz = noise2(f.seed, t * 0.09);
+    turn += (Math.abs(nz) < 0.5 ? 0 : (nz - Math.sign(nz) * 0.5) * 2) * calm;
+    // edges: look ahead and lean away early. The pull ramps up smoothly as the look-ahead point
+    // nears and crosses the edge, so a fish skimming along it doesn't flicker on and off.
+    const wide = W > Hp * 1.2;
+    const m = f.L * 0.45;
+    // keep right of the text only where there's room for it
+    const x0 = openPond ? m : W > Hp * 1.6 ? W * 0.37 : wide ? W * 0.22 : m, x1 = W - m, y0 = m, y1 = Hp - m;
+    const look = f.L * 1.2;
+    const lx = f.x + ch * look, ly = f.y + sh * look;
+    const band = f.L * 0.35;
+    const over = Math.max(x0 - lx, lx - x1, y0 - ly, ly - y1);
+    const pressure = smooth(-band, band, over);
+    if (pressure > 0) toward(Math.atan2((y0 + y1) / 2 - f.y, (x0 + x1) / 2 - f.x), 1.6 * pressure, "edge");
     // shy of the cursor
     if (input.inside) {
       const dx = f.x - input.x, dy = f.y - input.y / ax, dd = Math.hypot(dx, dy);
       if (dd < f.L * 0.8) {
-        toward(Math.atan2(dy, dx), 3);
+        toward(Math.atan2(dy, dx), 3 * smooth(f.L * 0.8, f.L * 0.5, dd), "cursor");
         f.burst = Math.max(f.burst, 0.8);
       }
     }
     // scattered by a click: curve away hard for a moment
     if (f.scare > 0) {
       f.scare -= dt;
-      toward(f.scareAng, 5);
+      toward(f.scareAng, 5, "scare");
     }
   }
   f.burst *= Math.exp(-dt * 1.5);
   const cruise = f.v * (1 + f.burst * 2.2) * (0.85 + 0.3 * (noise2(f.seed + 9, t * 0.4) * 0.5 + 0.5));
   f.brakeS += ((f.brake ?? 1) - f.brakeS) * (1 - Math.exp(-dt * 3)); // ease into and out of braking
-  const v = cruise * f.brakeS + (Math.max(W, Hp) * 0.75 - cruise) * (f.flee || 0) * (f.flee || 0);
+  const surge = 1 + 0.07 * Math.sin(2 * f.phase - 1); // each tail stroke pushes, then the fish glides
+  const v = cruise * f.brakeS * surge + (Math.max(W, Hp) * 0.75 - cruise) * (f.flee || 0) * (f.flee || 0);
   // a koi can't turn tighter than about 0.4 body lengths (faster when darting), and it eases
   // into a turn rather than snapping to it
   const maxTurn = Math.max(0.45, v / (f.L * 0.4));
@@ -160,7 +171,11 @@ function step(f, t, dt, input, flee) {
   f.x += Math.cos(f.h) * v * dt;
   f.y += Math.sin(f.h) * v * dt;
   f.speed = v;
-  f.phase += dt * (3 + v * 0.35);
+  // tail beats faster the faster it swims (about 0.7 Hz cruising, 1.5 Hz darting)
+  f.phase += dt * (2.5 + 11 * Math.min(v / f.L, 0.8));
+  // the body follows the turn with its own lag, so it bends smoothly into and out of turns
+  const bendTarget = clamp((f.tr * f.L) / Math.max(v, 1), -1.1, 1.1);
+  f.bend = (f.bend ?? 0) + (bendTarget - (f.bend ?? 0)) * (1 - Math.exp(-dt * 4));
   f.ripT -= dt * (0.9 + f.burst);
   if (f.ripT <= 0 && !f.out) {
     f.ripT = 0.7 + R() * 0.6;
@@ -195,7 +210,7 @@ function normals() {
 }
 function spine(f) {
   const seg = f.L / (N - 1);
-  const total = clamp((f.tr * f.L) / Math.max(f.speed || f.v, 1), -1.1, 1.1); // whole-body bend, radians
+  const total = f.bend ?? 0; // whole-body bend into the turn, radians
   SX[0] = f.x;
   SY[0] = f.y;
   for (let i = 0; i < N - 1; i++) {
@@ -210,9 +225,12 @@ function spine(f) {
     NX[i] = -ty / l;
     NY[i] = tx / l;
   }
+  // swimming wave travelling head → tail (about one body length per wavelength): a slight sway of
+  // the head, little through the stiff middle, a strong sweep of the tail. A bit wider when darting.
+  const amp = f.L * (1 + 0.35 * clamp(f.burst || 0));
   for (let i = 0; i < N; i++) {
     const s = i / (N - 1);
-    const o = f.L * 0.08 * Math.pow(s, 2.6) * Math.sin(f.phase - s * 5);
+    const o = amp * (0.012 + 0.016 * s + 0.072 * s * s * s) * Math.sin(f.phase - s * 6.3);
     SX[i] += NX[i] * o;
     SY[i] += NY[i] * o;
   }
@@ -304,10 +322,14 @@ function drawFish(fl, f, t) {
     out = Math.atan2(NY[i] * sd, NX[i] * sd);
     put(SX[i] + NX[i] * w * sd, SY[i] + NY[i] * w * sd, blend(out, back, 0.6), w0 * 1.15 * fold, w0 * 0.36);
   }
-  // the caudal fin follows the wave a little behind the tail root, swinging evenly both ways
-  const tail = Math.atan2(SY[N - 1] - SY[N - 4], SX[N - 1] - SX[N - 4]) + Math.sin(f.phase - 5.6) * 0.22;
+  // caudal fin: it feathers past the angle of the tail root (that's what pushes the water) and cups,
+  // the lobe on the pushing side trailing a little more than the other
+  const axis = f.h + Math.PI - (f.bend ?? 0); // tail direction without the wave
+  const root = Math.atan2(SY[N - 1] - SY[N - 3], SX[N - 1] - SX[N - 3]);
+  const dev = wrap(root - axis);
+  const tail = axis + dev * 1.7;
   for (const sd of [1, -1]) {
-    const ang = tail + sd * 0.44;
+    const ang = tail + sd * (0.42 + 0.22 * clamp(-dev * sd * 2.5, -0.5, 1));
     const lx = SX[N - 1] - Math.cos(tail) * w0 * 0.4, ly = SY[N - 1] - Math.sin(tail) * w0 * 0.4;
     put(lx, ly, ang, L * 0.34, w0 * 0.62);
   }

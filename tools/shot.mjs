@@ -1,6 +1,6 @@
 // Dev helper: drive headless Chrome over CDP, print console errors, take screenshots.
 // usage: node tools/shot.mjs <url> <outDir> '<steps json>' [width] [height] [mobile]
-// steps: [{"eval":"js"}, {"wait":1000}, {"shot":"name"}, {"pdf":"name"}, {"wheel":[delta, n, ms]}]
+// steps: [{"eval":"js"}, {"wait":1000}, {"shot":"name"}, {"pdf":"name"}, {"wheel":[delta, n, ms]}, {"mouse":[x, y]}]
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -62,6 +62,10 @@ for (const s of steps) {
     const r = await send("Runtime.evaluate", { expression: s.eval, awaitPromise: true, returnByValue: true });
     if (r.result?.result?.value !== undefined) console.log("eval →", JSON.stringify(r.result.result.value));
     if (r.result?.exceptionDetails) console.log("eval error:", r.result.exceptionDetails.exception?.description);
+  }
+  if (s.mouse) {
+    // move the pointer and leave it there: [x, y]
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: s.mouse[0], y: s.mouse[1] });
   }
   if (s.wheel) {
     // trackpad-like burst: [startDelta, events, msBetween], decaying
