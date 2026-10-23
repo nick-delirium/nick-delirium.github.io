@@ -2322,3 +2322,10 @@ button {
 .hero-mode[data-layout="bg"] .hero .page-inner {
   background: color-mix(in srgb, var(--bg) 35%, transparent);
 }
+/* wide screens: the text column sits on the left, so the pond fades behind it */
+@media (min-width: 861px) {
+  #pond {
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.28) 36%, #000 56%);
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.28) 36%, #000 56%);
+  }
+}

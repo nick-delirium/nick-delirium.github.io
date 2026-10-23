@@ -76,6 +76,10 @@ const renderer = new Renderer($("#ascii"), $(".viz-stage"), {
 const pondEl = $("#pond");
 const pond = new Renderer($("#pond canvas"), pondEl);
 pond.transitions = false;
+// big cells for the pond, so the symbols the fish are made of stay readable
+const pondRes = () => (mobileMQ.matches ? "pondS" : "pond");
+pond.setRes(pondRes());
+mobileMQ.addEventListener("change", () => pond.setRes(pondRes()));
 
 function palette() {
   const cs = getComputedStyle(root);
@@ -108,12 +112,9 @@ function apply() {
     renderer.setPalette(palette());
     pond.setPalette(palette());
   }
-  if (applied.res !== settings.res) {
-    renderer.setRes(settings.res);
-    pond.setRes(settings.res);
-  }
+  if (applied.res !== settings.res) renderer.setRes(settings.res);
   renderer.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
-  pond.setOptions({ bloom: settings.bloom, lens: false, motion: settings.motion });
+  pond.setOptions({ bloom: false, lens: false, motion: settings.motion });
 
   $$("[data-set-theme]").forEach((b) => b.classList.toggle("on", b.dataset.setTheme === settings.theme));
   $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === layout));

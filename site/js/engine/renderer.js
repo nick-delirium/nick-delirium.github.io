@@ -3,12 +3,12 @@
 
 import { Field, GLYPHS, RAMP_IDX, RAMP_LEN, G, hash1, SLICES, GLYPH_COUNT, CJK_FONT } from "./util.js";
 
-export const RES = { ultra: 4, hi: 5, med: 6, lo: 8 }; // cell width in css px
+export const RES = { ultra: 4, hi: 5, med: 6, lo: 8, pond: 10, pondS: 7 }; // cell width in css px
 const LEVELS = 8;
 const HUES = 5;
-const ATLAS_COLS = 48; // glyphs per atlas row; hues sit side by side, levels stack below
+const ATLAS_MAX = 4096; // texture limit to stay under on mobile GPUs
 const MAX_FPS = 60; // ProMotion screens would otherwise run every scene at 120
-const FONT = '"JetBrains Mono", ui-monospace, Menlo, monospace';
+const FONT = '"JetBrains Mono", ui-monospace, Menlo, "Noto Sans JP", "Hiragino Sans", monospace';
 const NOISE_GLYPHS = Array.from("!<>-_\\/[]{}=+*^?#%&$01░▒").map(G);
 const TRANSITION = 0.75;
 
@@ -194,6 +194,9 @@ export class Renderer {
   buildAtlas() {
     if (!this.tw || !this.palette) return;
     const { tw, th, atlas } = this;
+    // glyphs per atlas row: as many as fit while all hue bands together stay under the texture limit
+    const ATLAS_COLS = Math.max(16, Math.floor(ATLAS_MAX / (HUES * tw)));
+    this.atlasCols = ATLAS_COLS;
     const blocks = Math.ceil(GLYPH_COUNT / ATLAS_COLS);
     const W = ATLAS_COLS * tw;
 
@@ -269,6 +272,14 @@ export class Renderer {
     for (let g = 0; g < GLYPH_COUNT; g++) {
       this.gx[g] = (g % ATLAS_COLS) * tw;
       this.gb[g] = ((g / ATLAS_COLS) | 0) * LEVELS;
+    }
+    // cell background fills: a faint tint of each hue, LEVELS steps
+    this.bgFill = [];
+    for (let h = 0; h < HUES; h++) {
+      for (let l = 0; l < LEVELS; l++) {
+        const c = mix(bg, hues[h], 0.05 + 0.4 * (l / (LEVELS - 1)));
+        this.bgFill.push(`rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
+      }
     }
   }
 
@@ -355,6 +366,17 @@ export class Renderer {
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (f.useBg) {
+      const B = f.b, BH = f.bh, fills = this.bgFill;
+      for (let y = 0, i = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++, i++) {
+          const b = B[i];
+          if (b < 0.03) continue;
+          ctx.fillStyle = fills[BH[i] * LEVELS + Math.min(LEVELS - 1, (b * LEVELS) | 0)];
+          ctx.fillRect(x * tw, y * th, tw, th);
+        }
+      }
+    }
     const rl = RAMP_LEN - 1;
     for (let y = 0, i = 0; y < rows; y++) {
       const py = y * th;

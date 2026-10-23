@@ -195,7 +195,10 @@ const EXTRA =
   "░▒▓█▀▄▌▐" +
   "●○◉◆◇■□▪▫▲▼◀▶△▽◢◣◤◥" +
   "←↑→↓↖↗↘↙" +
-  "•°×÷≈≡∞∴※¤λΣΩπμ";
+  "•°×÷≈≡∞∴※¤λΣΩπμ" +
+  "§¶†‡±√∂∑∆∫≠≤≥¬∩∪⊕⊗" +
+  // half-width katakana: one cell wide, unlike the 2-cell CJK slices below
+  "ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
 export const GLYPHS = Array.from(new Set(Array.from(RAMP + EXTRA)));
 const GMAP = new Map(GLYPHS.map((c, i) => [c, i]));
 const QMARK = GMAP.get("?");
@@ -246,12 +249,16 @@ export class Field {
     this.v = new Float32Array(this.n);
     this.h = new Uint8Array(this.n);
     this.g = new Int16Array(this.n).fill(-1);
+    // optional cell backgrounds (a tinted block behind the glyph); drawn only when useBg is set
+    this.b = new Float32Array(this.n);
+    this.bh = new Uint8Array(this.n);
   }
 
   clear() {
     this.v.fill(0);
     this.h.fill(0);
     this.g.fill(-1);
+    if (this.useBg) this.b.fill(0);
   }
 
   /** multiply brightness (trails); explicit glyphs drop once dim */
