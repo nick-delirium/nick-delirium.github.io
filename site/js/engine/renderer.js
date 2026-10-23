@@ -26,7 +26,9 @@ function parseColor(str) {
 }
 
 export class Renderer {
-  constructor(canvas, stage, { onStats } = {}) {
+  /** cjk: false skips the 2-cell CJK sign glyphs, cutting the atlas to about a third (for scenes that never use them) */
+  constructor(canvas, stage, { onStats, cjk = true } = {}) {
+    this.glyphCount = cjk ? GLYPH_COUNT : GLYPHS.length;
     this.canvas = canvas;
     this.stage = stage;
     this.ctx = canvas.getContext("2d");
@@ -197,7 +199,7 @@ export class Renderer {
     // glyphs per atlas row: as many as fit while all hue bands together stay under the texture limit
     const ATLAS_COLS = Math.max(16, Math.floor(ATLAS_MAX / (HUES * tw)));
     this.atlasCols = ATLAS_COLS;
-    const blocks = Math.ceil(GLYPH_COUNT / ATLAS_COLS);
+    const blocks = Math.ceil(this.glyphCount / ATLAS_COLS);
     const W = ATLAS_COLS * tw;
 
     const mask = document.createElement("canvas");
@@ -226,7 +228,7 @@ export class Renderer {
     const big = document.createElement("canvas");
     const b = big.getContext("2d");
     let lastKey = "";
-    SLICES.forEach((s, k) => {
+    if (this.glyphCount > GLYPHS.length) SLICES.forEach((s, k) => {
       const bw = s.w * tw, bh = s.h * th;
       const key = s.size + s.ch;
       if (key !== lastKey) {
@@ -267,9 +269,9 @@ export class Renderer {
     }
     // per-glyph lookup: source x within a hue band, and the glyph row's first level row
     this.hueW = W;
-    this.gx = new Int32Array(GLYPH_COUNT);
-    this.gb = new Int32Array(GLYPH_COUNT);
-    for (let g = 0; g < GLYPH_COUNT; g++) {
+    this.gx = new Int32Array(this.glyphCount);
+    this.gb = new Int32Array(this.glyphCount);
+    for (let g = 0; g < this.glyphCount; g++) {
       this.gx[g] = (g % ATLAS_COLS) * tw;
       this.gb[g] = ((g / ATLAS_COLS) | 0) * LEVELS;
     }

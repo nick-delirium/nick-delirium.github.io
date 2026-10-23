@@ -2,7 +2,7 @@
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const MAIL = ["nick.delirium", "proton.me"].join("@");
-const SECTIONS = ["whoami", "now", "experience", "projects", "stack", "origin", "offduty", "contact"];
+const SECTIONS = ["whoami", "now", "experience", "projects", "stack", "edu", "offduty", "contact"];
 const LINKS = {
   github: "https://github.com/nick-delirium",
   linkedin: "https://www.linkedin.com/in/deliriumnick",
@@ -125,6 +125,8 @@ Calm, curious, allergic to slow code. Into AI, LLMs and cyberpunk.`);
       a = a.replace(/^\/|\/$/g, "").replace(/^~\/?/, "");
       if (a === "" || a === ".." || a === "home") return go("whoami");
       if (a === "off-duty" || a === "hobbies") a = "offduty";
+      if (a === "origin" || a === "education") a = "edu";
+      if (a === "tv" || a === "end") return go("tv-page");
       if (SECTIONS.includes(a)) return go(a);
       print(`cd: no such section: ${esc(a)} · try ${cmd("ls")}`);
     },
@@ -209,6 +211,9 @@ city    Paris, France (CET)`);
     },
     scenes() {
       print(ctx.sceneIds.map((s) => cmd("scene " + s, s)).join("  "));
+    },
+    tv() {
+      go("tv-page");
     },
     sys() {
       toggle(false);

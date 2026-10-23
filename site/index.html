@@ -77,7 +77,7 @@
       <a href="#experience" data-nav="experience">experience</a>
       <a href="#projects" data-nav="projects">projects</a>
       <a href="#stack" data-nav="stack">stack</a>
-      <a href="#origin" data-nav="origin">origin</a>
+      <a href="#edu" data-nav="edu">edu</a>
       <a href="#offduty" data-nav="offduty">off-duty</a>
       <a href="#contact" data-nav="contact">contact</a>
     </nav>
@@ -136,6 +136,9 @@
 
   <!-- ───────── first-page pond: fish behind the page until you scroll ───────── -->
   <div id="pond" aria-hidden="true"><canvas></canvas></div>
+
+  <!-- ───────── last page: a television tuned to static ───────── -->
+  <div id="tv" aria-hidden="true"><canvas></canvas></div>
 
   <!-- ───────── ascii viewport ───────── -->
   <aside id="viz" aria-hidden="true">
@@ -412,24 +415,24 @@
       </div>
     </section>
 
-    <!-- 06 ORIGIN -->
-    <section id="origin" class="page" data-scene="molecule" aria-labelledby="h-origin">
+    <!-- 06 EDUCATION -->
+    <section id="edu" class="page" data-scene="molecule" aria-labelledby="h-edu">
       <div class="page-inner narrow">
         <header class="sec-head">
-          <h2 id="h-origin" class="sec-title" data-text="ORIGIN">ORIGIN</h2>
-          <span class="sec-meta">// molecules → modules</span>
+          <h2 id="h-edu" class="sec-title" data-text="EDUCATION">EDUCATION</h2>
+          <span class="sec-meta">// degree &amp; recognition</span>
         </header>
         <div class="degree">
           <h3>Bachelor's degree, Chemical Engineering</h3>
-          <p>Saint Petersburg State Institute of Technology · 2014–2018</p>
+          <p>Saint Petersburg State Institute of Technology (Technical University) · 2014–2018</p>
         </div>
         <ul class="certs">
-          <li><b>Winner</b> · HackUniversity hackathon, powered by HERE</li>
+          <li><b>Winner</b> · HackUniversity hackathon, track powered by HERE</li>
           <li><b>Certified</b> · Triplebyte</li>
         </ul>
         <p class="lead">
-          I trained as a chemical engineer, and coding was the hobby. Then a crypto startup asked for help, and the hobby became the career.
-          I'm still debugging reactions, just in the DOM now.
+          My background is in chemical process engineering: systems thinking, measurement and rigour that carry directly into software.
+          I began programming alongside my studies and moved into it professionally in 2018, when a crypto startup brought me in to help build its product.
         </p>
       </div>
     </section>
@@ -480,6 +483,9 @@
         </footer>
       </div>
     </section>
+
+    <!-- 09 END: a dead channel (drawn on the #tv layer while this page is in view) -->
+    <section id="tv-page" class="page tv-page" aria-label="End of page"></section>
   </main>
 
   <!-- ───────── terminal ───────── -->
