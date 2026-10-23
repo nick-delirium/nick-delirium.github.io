@@ -19,6 +19,7 @@ const KINDS = [
   { glyphs: Array.from("§¶†‡±√∂∑∆∫≠≈≡∞※¤#%&@$*+=<>{}[]?!"), hue: HUE.main, accent: HUE.white },
 ].map((k) => ({ ...k, ids: k.glyphs.map(G) }));
 
+let openPond = false; // the last page: no text, so no keep-right zone
 let fish = [], ripples = [], motes = [], R, W = 1, Hp = 1, ax = 0.6, gone = false, seenShock = 0;
 const SX = new Float32Array(N), SY = new Float32Array(N), NX = new Float32Array(N), NY = new Float32Array(N);
 
@@ -55,7 +56,7 @@ function spawn(i, fromEdge) {
   // narrow portrait screens get relatively bigger fish (sized from the width)
   const L = clamp(Math.min(W, Hp) * (Hp > W * 1.2 ? 0.34 : 0.23 + R() * 0.04) - i * 2, 14, 60);
   let x, y, h;
-  const wide = W > Hp * 1.2;
+  const wide = W > Hp * 1.2 && !openPond;
   if (fromEdge) {
     // just outside an edge, heading in (on wide screens never from the left, where the text is)
     const side = wide ? [1, 2, 3][(R() * 3) | 0] : (R() * 4) | 0;
@@ -127,7 +128,7 @@ function step(f, t, dt, input, flee) {
       const wide = W > Hp * 1.2;
       const m = f.L * 0.45;
       // keep right of the text only where there's room for it
-      const x0 = W > Hp * 1.6 ? W * 0.37 : wide ? W * 0.22 : m, x1 = W - m, y0 = m, y1 = Hp - m;
+      const x0 = openPond ? m : W > Hp * 1.6 ? W * 0.37 : wide ? W * 0.22 : m, x1 = W - m, y0 = m, y1 = Hp - m;
       const look = f.L * 1.2;
       const lx = f.x + ch * look, ly = f.y + sh * look;
       if (lx < x0 || lx > x1 || ly < y0 || ly > y1) toward(Math.atan2((y0 + y1) / 2 - f.y, (x0 + x1) / 2 - f.x), 1.4);
@@ -425,6 +426,7 @@ export default {
   title: "KOI_POND",
   caption: "three fish and a little wake",
   flee: false,
+  open: false,
   onGone: null,
   get school() {
     return fish; // for tests and tooling
@@ -463,6 +465,7 @@ export default {
   },
 
   frame(f, t, dt, S, input) {
+    openPond = !!this.open;
     f.clear();
     // a fish leaving or arriving: hand the pond back to the page when empty, refill when asked
     if (!this.flee && gone) {

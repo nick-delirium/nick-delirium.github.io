@@ -134,11 +134,8 @@
     </div>
   </aside>
 
-  <!-- ───────── first-page pond: fish behind the page until you scroll ───────── -->
+  <!-- ───────── pond: fish behind the first and last pages ───────── -->
   <div id="pond" aria-hidden="true"><canvas></canvas></div>
-
-  <!-- ───────── last page: a television tuned to static ───────── -->
-  <div id="tv" aria-hidden="true"><canvas></canvas></div>
 
   <!-- ───────── ascii viewport ───────── -->
   <aside id="viz" aria-hidden="true">
@@ -484,8 +481,8 @@
       </div>
     </section>
 
-    <!-- 09 END: a dead channel (drawn on the #tv layer while this page is in view) -->
-    <section id="tv-page" class="page tv-page" aria-label="End of page"></section>
+    <!-- 09 END: an empty page; the fish swim back in (drawn on the #pond layer) -->
+    <section id="end" class="page end-page" aria-label="End of page"></section>
   </main>
 
   <!-- ───────── terminal ───────── -->

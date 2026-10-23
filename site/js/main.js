@@ -111,12 +111,10 @@ function apply() {
   if (applied.theme !== settings.theme) {
     renderer.setPalette(palette());
     pond.setPalette(palette());
-    tvR?.setPalette(palette());
   }
   if (applied.res !== settings.res) renderer.setRes(settings.res);
   renderer.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
   pond.setOptions({ bloom: false, lens: false, motion: settings.motion });
-  tvR?.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
 
   $$("[data-set-theme]").forEach((b) => b.classList.toggle("on", b.dataset.setTheme === settings.theme));
   $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === layout));
@@ -297,7 +295,6 @@ const resolveScene = () => show(pinScene || hoverScene || spyScene);
 export function pin(id) {
   pinScene = id && SCENE_IDS.includes(id) ? id : null;
   updateHero();
-  updateTv();
   resolveScene();
   return pinScene;
 }
@@ -334,70 +331,45 @@ function setSpyScene(id) {
 /* ═════════════ first page: pond ↔ animation window ═════════════ */
 // While the first page fills the screen the window stays hidden and the pond runs. Scrolling past
 // ~45% of it opens the window and sends the fish off-screen; the pond stops once they're gone.
-let heroMode = null, fishScene = null;
+// The last page is empty too, and the fish swim back in there with the whole screen to themselves.
+const endPage = $("#end");
+let heroMode = null, endMode = null, fishScene = null;
 function updateHero() {
-  const r = sections[0].getBoundingClientRect();
-  const inHero = !pinScene && r.bottom > innerHeight * 0.55;
-  if (inHero === heroMode) return;
+  const inHero = !pinScene && sections[0].getBoundingClientRect().bottom > innerHeight * 0.55;
+  const atEnd = !pinScene && endPage.getBoundingClientRect().top < innerHeight * 0.5;
+  if (inHero === heroMode && atEnd === endMode) return;
   heroMode = inHero;
+  endMode = atEnd;
+  const pondOn = inHero || atEnd;
   root.classList.toggle("hero-mode", inHero);
-  renderer.suspended = inHero || !!tvMode;
+  root.classList.toggle("end-mode", atEnd);
+  renderer.suspended = pondOn;
   renderer.kick(true);
   if (!fishScene) return;
-  fishScene.flee = !inHero;
-  if (!inHero && !settings.motion) {
+  fishScene.flee = !pondOn;
+  fishScene.open = atEnd; // no text on the last page: the whole screen is water
+  if (!pondOn && !settings.motion) {
     // nothing animates, so the fish can't swim off: just fade the pond
     pondEl.classList.add("gone");
     pond.suspended = true;
   }
-  if (inHero) {
+  if (pondOn) {
     pondEl.classList.remove("gone");
     pond.suspended = false;
     pond.kick();
   }
 }
-/* ═════════════ last page: the television ═════════════ */
-// The final, empty page shows a CRT tuned to static on its own full-screen layer. Its renderer is
-// created the first time someone gets there, and only runs while that page is in view.
-const tvEl = $("#tv");
-const tvPage = $("#tv-page");
-let tvMode = null, tvR = null;
-function tvRes() {
-  return mobileMQ.matches ? "pondS" : "lo";
-}
-function updateTv() {
-  const on = !pinScene && tvPage.getBoundingClientRect().top < innerHeight * 0.5;
-  if (on === tvMode) return;
-  tvMode = on;
-  root.classList.toggle("tv-mode", on);
-  renderer.suspended = !!heroMode || on;
-  renderer.kick(true);
-  if (on && !tvR) {
-    tvR = new Renderer($("#tv canvas"), tvEl, { cjk: false });
-    tvR.transitions = false;
-    tvR.setRes(tvRes());
-    tvR.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
-    tvR.setPalette(palette());
-    loadScene("tv").then((scene) => tvR.setScene(scene));
-  }
-  if (tvR) {
-    tvR.suspended = !on;
-    tvR.kick(true);
-  }
-}
-mobileMQ.addEventListener("change", () => tvR?.setRes(tvRes()));
-
 loadScene("fish").then((scene) => {
   fishScene = scene;
   scene.onGone = () => {
-    if (heroMode) return;
+    if (heroMode || endMode) return;
     pondEl.classList.add("gone");
     pond.suspended = true;
   };
   pond.setScene(scene);
-  heroMode = null;
+  heroMode = endMode = null;
   updateHero();
-  if (!heroMode) {
+  if (!heroMode && !endMode) {
     // landed mid-page (reload, deep link): no fish to chase away
     pondEl.classList.add("gone");
     pond.suspended = true;
@@ -407,7 +379,6 @@ loadScene("fish").then((scene) => {
 function spy() {
   exp.sync();
   updateHero();
-  updateTv();
   const fy = focusLine();
   let best = null, bestH = Infinity;
   for (const el of spyEls) {
@@ -426,7 +397,7 @@ function spy() {
     if (best.matches(".card, .entry, .hobbies li")) best.classList.add("on");
     lastOn = best;
   }
-  const link = navLinks.get(sec.id) ?? (sec === tvPage ? navLinks.get("contact") : null);
+  const link = navLinks.get(sec.id) ?? (sec === endPage ? navLinks.get("contact") : null);
   if (link !== lastNav) {
     lastNav?.classList.remove("on");
     link?.classList.add("on");

@@ -126,7 +126,7 @@ Calm, curious, allergic to slow code. Into AI, LLMs and cyberpunk.`);
       if (a === "" || a === ".." || a === "home") return go("whoami");
       if (a === "off-duty" || a === "hobbies") a = "offduty";
       if (a === "origin" || a === "education") a = "edu";
-      if (a === "tv" || a === "end") return go("tv-page");
+      if (a === "end" || a === "pond") return go("end");
       if (SECTIONS.includes(a)) return go(a);
       print(`cd: no such section: ${esc(a)} · try ${cmd("ls")}`);
     },
@@ -211,9 +211,6 @@ city    Paris, France (CET)`);
     },
     scenes() {
       print(ctx.sceneIds.map((s) => cmd("scene " + s, s)).join("  "));
-    },
-    tv() {
-      go("tv-page");
     },
     sys() {
       toggle(false);
