@@ -89,6 +89,7 @@ export function initTerminal(ctx) {
         ["git log", "career, as commits"],
         ["neofetch", "system info"],
         ["sys", "display settings panel"],
+        ["glitch", "leak the sensor, right now"],
         ["theme [name]", "night-city · neon-noir · phosphor · smog"],
         ["layout [name]", "split · window · bg"],
         ["res [level]", "ultra · hi · med · lo"],
@@ -211,6 +212,10 @@ city    Paris, France (CET)`);
     },
     scenes() {
       print(ctx.sceneIds.map((s) => cmd("scene " + s, s)).join("  "));
+    },
+    glitch() {
+      toggle(false);
+      setTimeout(ctx.bleed, 300);
     },
     sys() {
       toggle(false);

@@ -632,8 +632,31 @@ addEventListener("afterprint", () => {
 $("#btn-print").addEventListener("click", printCV);
 
 /* ═════════════ terminal + keys ═════════════ */
+/* ═════════════ sensor bleed ═════════════ */
+// About once a minute the "camera sensor" leaks for a few seconds: bright ASCII cells smear down
+// their columns (both the animation window and the pond) and the visible titles split their colours.
+let bleedTimer = 0;
+function scheduleBleed(first = false) {
+  clearTimeout(bleedTimer);
+  bleedTimer = setTimeout(() => sensorBleed(), first ? 18000 + Math.random() * 12000 : 45000 + Math.random() * 30000);
+}
+function sensorBleed(force = false) {
+  const ok = settings.glitch && settings.motion && !document.hidden;
+  if (ok || force) {
+    const ms = 2000 + Math.random() * 1500;
+    renderer.glitch(ms);
+    pond.glitch(ms);
+    root.classList.remove("bleeding");
+    void root.offsetWidth;
+    root.classList.add("bleeding");
+    setTimeout(() => root.classList.remove("bleeding"), ms);
+  }
+  scheduleBleed();
+}
+
 const term = initTerminal({
   settings,
+  bleed: () => sensorBleed(true),
   openSys: () => toggleSys(true),
   navigate: (id) => {
     exp.suppress(1600);
@@ -686,6 +709,7 @@ fontsReady.then(() => {
 });
 await boot();
 setupTitleDecode();
+scheduleBleed(true);
 const typed = $(".typed");
 if (typed) typeOut(typed);
 if (!store.get("nd.seen", false)) {

@@ -12,6 +12,8 @@ const MAX_FPS = 60; // ProMotion screens would otherwise run every scene at 120
 const FONT = '"JetBrains Mono", ui-monospace, Menlo, "Noto Sans JP", "Hiragino Sans", monospace';
 const NOISE_GLYPHS = Array.from("!<>-_\\/[]{}=+*^?#%&$01░▒").map(G);
 const TRANSITION = 0.75;
+const SMEAR = Array.from("│|│¦:'").map(G);
+const SPARKLE = Array.from("░▒▓#%&@*+=x01").map(G);
 
 function mix(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -115,6 +117,14 @@ export class Renderer {
     this.kick(true);
   }
 
+  /** sensor bleed for `ms` milliseconds (see postprocess) */
+  glitch(ms) {
+    this.glStart = performance.now() / 1000;
+    this.glDur = ms / 1000;
+    this.glSeed = (Math.random() * 1e6) | 0;
+    this.kick(true);
+  }
+
   setRes(res) {
     this.res = res in RES ? res : "hi";
     this.resize(true);
@@ -186,6 +196,8 @@ export class Renderer {
     this.tmpV = new Float32Array(this.field.n);
     this.tmpH = new Uint8Array(this.field.n);
     this.tmpG = new Int16Array(this.field.n);
+    this.tmpB = new Float32Array(this.field.n);
+    this.tmpBH = new Uint8Array(this.field.n);
     this.b1.width = Math.max(1, this.canvas.width >> 2);
     this.b1.height = Math.max(1, this.canvas.height >> 2);
     this.b2.width = Math.max(1, this.canvas.width >> 4);
@@ -379,7 +391,7 @@ export class Renderer {
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if (f.useBg) {
-      const B = f.b, BH = f.bh, fills = this.bgFill;
+      const B = post ? this.tmpB : f.b, BH = post ? this.tmpBH : f.bh, fills = this.bgFill;
       for (let y = 0, i = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++, i++) {
           const b = B[i];
@@ -432,13 +444,26 @@ export class Renderer {
     inp.shocks = inp.shocks.filter((s) => time - s.t < 1.4);
     const lensOn = this.lens && inp.inside && this.motion;
     const trans = this.motion && this.transitions && this.sceneT < TRANSITION;
-    if (!lensOn && !inp.shocks.length && !trans) return false;
+    // sensor bleed envelope: snaps in, flickers and drops out for a frame now and then, fades away
+    let gl = 0;
+    if (this.glDur && this.motion) {
+      const p = (time - this.glStart) / this.glDur;
+      if (p >= 0 && p <= 1) {
+        const fl = hash1(Math.floor(time * 14) + this.glSeed);
+        gl = Math.min(1, p / 0.06) * (1 - Math.max(0, (p - 0.7) / 0.3)) * (fl < 0.12 ? 0.15 : 0.6 + 0.4 * fl);
+      } else if (p > 1) this.glDur = 0;
+    }
+    if (!lensOn && !inp.shocks.length && !trans && gl <= 0) return false;
 
     const sV = f.v, sH = f.h, sG = f.g;
     const V = this.tmpV, H = this.tmpH, Gs = this.tmpG;
     V.set(sV);
     H.set(sH);
     Gs.set(sG);
+    if (f.useBg) {
+      this.tmpB.set(f.b);
+      this.tmpBH.set(f.bh);
+    }
     const ax = this.cw / this.ch;
 
     const sample = (i, sx, sy) => {
@@ -535,6 +560,145 @@ export class Renderer {
         }
       }
     }
+    if (gl > 0) this.sensorBleed(time, gl);
     return true;
+  }
+
+  /**
+   * CCD-style sensor bleed: bright cells leak charge down their column. The streak keeps the
+   * source colour, drifts to cyan then magenta as it fades, and breaks into coloured noise where it
+   * dies. On top: an offset colour ghost and a few torn bands of rows.
+   */
+  sensorBleed(time, gl) {
+    const f = this.field;
+    const { cols, rows } = f;
+    const V = this.tmpV, H = this.tmpH, Gs = this.tmpG;
+    const useB = f.useBg, B = this.tmpB, BH = this.tmpBH;
+    const sV = f.v, sH = f.h, sG = f.g, sB = f.b, sBH = f.bh;
+    const seed = this.glSeed;
+    const tick = Math.floor(time * 20);
+    const thr = 0.5;
+
+    // offset colour ghost (RGB split): magenta one cell left, cyan one cell right of bright cells
+    if (gl > 0.3) {
+      for (let y = 0; y < rows; y++) {
+        const r = y * cols;
+        for (let x = 1; x < cols - 1; x++) {
+          const v = sV[r + x];
+          if (v < 0.35) continue;
+          const l = r + x - 1, q = r + x + 1;
+          if (V[l] < v * 0.4 * gl) {
+            V[l] = v * 0.4 * gl;
+            H[l] = 3;
+            Gs[l] = sG[r + x];
+          }
+          if (V[q] < v * 0.4 * gl) {
+            V[q] = v * 0.4 * gl;
+            H[q] = 2;
+            Gs[q] = sG[r + x];
+          }
+        }
+      }
+    }
+
+    // vertical bleed, column by column
+    for (let x = 0; x < cols; x++) {
+      const hx = hash1(x * 131 + seed);
+      if (hx < 0.25) continue; // not every column leaks
+      const decay = 0.86 + 0.12 * hash1(x * 977 + seed); // some columns bleed much longer
+      let carry = 0, peak = 0, hue = 0, dist = 0, bleedB = 0, bhue = 0;
+      for (let y = 0; y < rows; y++) {
+        const i = y * cols + x;
+        const src = Math.max(sV[i], useB ? sB[i] : 0);
+        if (src > thr) {
+          const c = ((src - thr) / (1 - thr)) * gl * 1.15;
+          if (c > carry) {
+            carry = c;
+            peak = c;
+            hue = sH[i];
+            dist = 0;
+            if (useB && sB[i] > 0.3) {
+              bleedB = sB[i];
+              bhue = sBH[i];
+            }
+          }
+          continue;
+        }
+        if (carry <= 0) continue;
+        carry *= decay;
+        dist++;
+        if (carry > 0.07) {
+          // colour drifts away from the source as the streak runs on
+          const hh = dist < 4 ? hue : dist < 10 ? 2 : 3;
+          const v = carry * (0.8 + 0.2 * hash1(i + tick * 31));
+          if (v > V[i]) {
+            V[i] = v;
+            H[i] = hh;
+            Gs[i] = SMEAR[(hash1(i * 7 + tick) * SMEAR.length) | 0];
+          }
+          if (useB && bleedB > 0) {
+            const b = bleedB * (carry / Math.max(peak, 0.01)) * 0.85;
+            if (b > B[i]) {
+              B[i] = b;
+              BH[i] = dist < 6 ? bhue : hh;
+            }
+          }
+        } else {
+          // the streak dies in a burst of coloured noise
+          if (peak > 0.25) {
+            const len = 2 + ((hash1(x + seed * 3) * 5) | 0);
+            for (let k = 0; k < len && y + k < rows; k++) {
+              const j = (y + k) * cols + x;
+              const h = hash1(j * 13 + tick * 7);
+              if (h < 0.75) {
+                V[j] = 0.5 + 0.5 * h;
+                H[j] = [1, 2, 3, 4][(h * 40) & 3];
+                Gs[j] = SPARKLE[(h * 997) % SPARKLE.length | 0];
+                if (useB) {
+                  B[j] = 0.3 + 0.4 * h;
+                  BH[j] = [1, 2, 3][(h * 70) % 3 | 0];
+                }
+              }
+            }
+          }
+          carry = 0;
+          peak = 0;
+          bleedB = 0;
+        }
+      }
+    }
+
+    // torn bands: a few groups of rows slide sideways, re-rolled every few frames
+    const bands = Math.round(gl * 4);
+    const roll = Math.floor(time * 7);
+    const tmp = this.tearRow && this.tearRow.length >= cols ? this.tearRow : (this.tearRow = new Float32Array(cols * 3));
+    for (let b = 0; b < bands; b++) {
+      const r1 = hash1(seed + roll * 17 + b * 101), r2 = hash1(seed + roll * 29 + b * 53);
+      const y0 = Math.floor(r1 * rows), hgt = 1 + Math.floor(r2 * 4);
+      const shift = Math.round((r2 - 0.5) * 2 * (2 + gl * 8));
+      if (!shift) continue;
+      for (let y = y0; y < Math.min(rows, y0 + hgt); y++) {
+        const r = y * cols;
+        for (let x = 0; x < cols; x++) {
+          tmp[x] = V[r + x];
+          tmp[cols + x] = H[r + x];
+          tmp[2 * cols + x] = Gs[r + x];
+        }
+        for (let x = 0; x < cols; x++) {
+          const sx = (((x - shift) % cols) + cols) % cols;
+          V[r + x] = tmp[sx];
+          H[r + x] = tmp[cols + sx];
+          Gs[r + x] = tmp[2 * cols + sx];
+        }
+        if (useB) {
+          const rowB = B.slice(r, r + cols), rowBH = BH.slice(r, r + cols);
+          for (let x = 0; x < cols; x++) {
+            const sx = (((x - shift) % cols) + cols) % cols;
+            B[r + x] = rowB[sx];
+            BH[r + x] = rowBH[sx];
+          }
+        }
+      }
+    }
   }
 }

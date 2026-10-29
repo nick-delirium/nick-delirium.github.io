@@ -2346,3 +2346,27 @@ button {
     display: none !important;
   }
 }
+
+/* ═════════════ sensor bleed: titles split their colours while the ASCII smears ═════════════ */
+.bleeding .sec-title,
+.bleeding .hero-name {
+  animation: bleed-split 2.6s steps(1) both;
+}
+@keyframes bleed-split {
+  0%, 100% { text-shadow: none; transform: none; }
+  3% { text-shadow: -3px 0 color-mix(in srgb, var(--hot) 80%, transparent), 3px 0 color-mix(in srgb, var(--alt) 80%, transparent); transform: translateX(2px); }
+  6% { text-shadow: 2px 0 color-mix(in srgb, var(--hot) 70%, transparent), -4px 0 color-mix(in srgb, var(--alt) 70%, transparent); transform: translateX(-3px) skewX(-6deg); }
+  9% { text-shadow: -1px 0 color-mix(in srgb, var(--hot) 60%, transparent), 1px 0 color-mix(in srgb, var(--alt) 60%, transparent); transform: none; }
+  22% { text-shadow: -5px 1px color-mix(in srgb, var(--hot) 75%, transparent), 4px -1px color-mix(in srgb, var(--alt) 75%, transparent); transform: translateX(4px); }
+  25% { text-shadow: -1px 0 color-mix(in srgb, var(--hot) 50%, transparent), 1px 0 color-mix(in srgb, var(--alt) 50%, transparent); transform: none; }
+  48% { text-shadow: 3px 0 color-mix(in srgb, var(--hot) 70%, transparent), -3px 0 color-mix(in srgb, var(--alt) 70%, transparent); transform: translateX(-2px) skewX(4deg); }
+  52% { text-shadow: -1px 0 color-mix(in srgb, var(--hot) 45%, transparent), 1px 0 color-mix(in srgb, var(--alt) 45%, transparent); transform: none; }
+  78% { text-shadow: -2px 0 color-mix(in srgb, var(--hot) 35%, transparent), 2px 0 color-mix(in srgb, var(--alt) 35%, transparent); }
+  90% { text-shadow: none; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bleeding .sec-title,
+  .bleeding .hero-name {
+    animation: none;
+  }
+}
