@@ -1061,6 +1061,57 @@ button {
 .card-redacted {
   border-style: dashed;
 }
+/* short screens: tighter cards so the whole grid stays on one page */
+@media (max-height: 820px) and (min-width: 861px) {
+  .cards {
+    gap: 10px;
+  }
+  .card {
+    gap: 6px;
+    padding: 13px 16px 11px;
+  }
+  .card-name {
+    font-size: 19px;
+  }
+  .card-desc {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .card-meta {
+    padding-top: 8px;
+  }
+  .card-wide {
+    padding-block: 10px;
+  }
+}
+/* a full-row strip: name, description and meta side by side */
+.card-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 24px;
+  padding-block: 14px;
+}
+.card-wide .card-desc {
+  flex: 1;
+}
+.card-wide .card-meta {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+  gap: 16px;
+}
+@container (max-width: 540px) {
+  .card-wide {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card-wide .card-meta {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--line-2);
+  }
+}
 .redact {
   background: var(--fg);
   color: var(--fg);

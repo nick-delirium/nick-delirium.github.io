@@ -155,6 +155,9 @@ export class Renderer {
       this.resize(true);
     }
     this.field.clear();
+    // cell backgrounds are opt-in per scene: drop the previous scene's
+    this.field.useBg = false;
+    this.field.bgGap = 0;
     scene.init?.(this.field, this.S());
     if (!this.motion) this.prewarm();
     this.kick(true);
@@ -392,12 +395,14 @@ export class Renderer {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if (f.useBg) {
       const B = post ? this.tmpB : f.b, BH = post ? this.tmpBH : f.bh, fills = this.bgFill;
+      // optional gap between filled cells (fraction of a cell), for tile maps
+      const gw = tw - Math.round(tw * (f.bgGap || 0)), gh = th - Math.round(th * (f.bgGap || 0));
       for (let y = 0, i = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++, i++) {
           const b = B[i];
           if (b < 0.03) continue;
           ctx.fillStyle = fills[BH[i] * FILLS + Math.min(FILLS - 1, Math.round(b * (FILLS - 1)))];
-          ctx.fillRect(x * tw, y * th, tw, th);
+          ctx.fillRect(x * tw, y * th, gw, gh);
         }
       }
     }

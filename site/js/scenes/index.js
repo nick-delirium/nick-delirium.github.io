@@ -40,6 +40,7 @@ const LOADERS = {
   sauron: () => import("./sauron.js"),
   llm: () => import("./llm.js"),
   fish: () => import("./fish.js"),
+  hdd: () => import("./hdd.js"),
   fleet: () => import("./fleet.js"),
   cosmos: () => import("./cosmos.js"),
   sigils: () => import("./sigils.js"),
