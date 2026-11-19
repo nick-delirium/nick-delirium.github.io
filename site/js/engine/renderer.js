@@ -111,6 +111,8 @@ export class Renderer {
     this.palette = {
       bg: parseColor(p.bg),
       hues: [p.fg, p.main, p.alt, p.hot, p.white, ...(this.extraHues || [])].map(parseColor),
+      // fill-only colours: cell backgrounds can use them, glyphs can't (keeps the glyph atlas small)
+      fill: (this.fillHues || []).map(parseColor),
     };
     this.nHues = this.palette.hues.length;
     this.buildAtlas();
@@ -139,10 +141,12 @@ export class Renderer {
 
   setScene(scene) {
     if (!scene || scene === this.scene) return;
-    // scenes can bring fixed colours of their own (hue indices 5, 6, …), independent of the theme
-    const extra = scene.extraHues || [];
-    if (extra.join() !== (this.extraHues || []).join()) {
+    // scenes can bring fixed colours of their own (hue indices 5, 6, …), independent of the theme:
+    // extraHues for glyphs and backgrounds, fillHues (indexed after them) for backgrounds only
+    const extra = scene.extraHues || [], fill = scene.fillHues || [];
+    if (extra.join() !== (this.extraHues || []).join() || fill.join() !== (this.fillHues || []).join()) {
       this.extraHues = extra;
+      this.fillHues = fill;
       if (this.theme) this.setPalette(this.theme);
     }
     this.scene = scene;
@@ -302,9 +306,9 @@ export class Renderer {
     }
     // cell background fills: each hue blended over the page background, from faint to solid
     this.bgFill = [];
-    for (let h = 0; h < HUES; h++) {
+    for (const hue of [...hues, ...this.palette.fill]) {
       for (let l = 0; l < FILLS; l++) {
-        const c = mix(bg, hues[h], l / (FILLS - 1));
+        const c = mix(bg, hue, l / (FILLS - 1));
         this.bgFill.push(`rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
       }
     }

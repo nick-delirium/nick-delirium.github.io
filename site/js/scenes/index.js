@@ -41,6 +41,7 @@ const LOADERS = {
   llm: () => import("./llm.js"),
   fish: () => import("./fish.js"),
   hdd: () => import("./hdd.js"),
+  aurora: () => import("./aurora.js"),
   fleet: () => import("./fleet.js"),
   cosmos: () => import("./cosmos.js"),
   sigils: () => import("./sigils.js"),

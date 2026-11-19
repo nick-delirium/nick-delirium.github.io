@@ -10,6 +10,7 @@ const LINKS = {
   repo: "https://github.com/openreplay/openreplay",
   dolly: "https://github.com/nick-delirium/dolly",
   "disk-check": "https://github.com/nick-delirium/disk-check",
+  aurora: "https://nick-delirium.github.io/aurora/",
   notalearn: "https://nick-delirium.github.io/notalearn/",
   arctius: "https://github.com/nick-delirium/lemmy-fennec",
   bluejay: "https://github.com/nick-delirium/bluejay",
@@ -17,6 +18,7 @@ const LINKS = {
 };
 const PROJECTS = {
   dolly: "task memory for AI coding agents · TypeScript · 2026",
+  aurora: "generative wallpapers, liquid-glass UI · WebGL · 2026",
   "disk-check": "see what fills your Mac's disk, clean it safely · Go · 2026",
   "notation-quest": "learn chess notation by playing · Svelte 5 PWA · 2026",
   arctius: "Lemmy client · React Native / Expo / MobX · 2023–24",
