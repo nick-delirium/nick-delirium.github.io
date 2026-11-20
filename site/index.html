@@ -173,8 +173,8 @@
           I own the frontend end to end: tracker, player, browser extension and mobile SDKs. These days I'm also building AI tooling and on-device ML.
         </p>
         <ul class="facts">
-          <li><b>#2</b> of 73 contributors to OpenReplay</li>
-          <li><b>1.2M</b> npm downloads a month</li>
+          <li><b>#2</b> of 76 contributors to OpenReplay</li>
+          <li><b>1.8M</b> npm downloads a month</li>
           <li><b>40–50%</b> cut in pipeline costs</li>
           <li><b data-years-since="2018-01">8+</b> years shipping</li>
         </ul>
@@ -196,18 +196,18 @@
       <div class="page-inner">
         <header class="sec-head">
           <h2 id="h-now" class="sec-title" data-text="NOW">NOW</h2>
-          <span class="sec-meta">// oct 2026</span>
+          <span class="sec-meta">// nov 2026</span>
         </header>
         <p class="lead">
-          At OpenReplay I recently shipped a rewrite of the replay player core, following a rework of the tracker's batch pipeline.
+          At OpenReplay I recently landed a rewrite of the replay player core and the UI 2.0 redesign, and a new tracker core is in opt-in testing.
           Outside work, I build tools for AI coding agents and experiment with on-device ML in JavaScript.
         </p>
         <ol class="entries">
           <li class="entry" data-scene="helix" data-scene-hover>
             <h3 class="entry-name"><a href="https://github.com/nick-delirium/dolly" rel="noopener">dolly</a></h3>
-            <p class="entry-meta">open source · 2026 <span class="state ok">live</span></p>
+            <p class="entry-meta">open source · v1.0 <span class="state ok">live</span></p>
             <div class="entry-body">
-              <p>Task memory for AI coding agents, kept as Markdown in the repository: a task board, a log of decisions and versioned specs, so the next session picks up where the last one stopped. Works with Claude Code, opencode and pi, with zero runtime dependencies.</p>
+              <p>Task memory for AI coding agents, kept as Markdown in the repo: a task board, a decision log and versioned specs, so the next session picks up where the last one stopped. Works with Claude Code, Codex, Cursor, opencode, pi and more; zero runtime dependencies.</p>
               <ul class="tags"><li>TypeScript</li><li>Claude Code</li><li>MCP</li></ul>
             </div>
           </li>
@@ -247,14 +247,15 @@
                 <h3 class="job-co"><a href="https://openreplay.com" rel="noopener">OpenReplay</a></h3>
                 <div class="job-role">Senior Software Engineer · R&amp;D · Founding engineer</div>
                 <div class="job-when"><span>MAY 2022 → NOW</span><i data-since="2022-05"></i><em>Paris · open source</em></div>
-                <p class="job-impact">I have full ownership of the frontend: the replay player, the JS and Swift tracker libraries, the <b>Spot</b> Chrome extension and the MCP apps server. I also work directly with enterprise clients every day.</p>
+                <p class="job-impact">I own the frontend end to end: the web app and cloud console, the replay player, the JS tracker and network proxy, the Swift, Flutter and React Native SDKs, the <b>Spot</b> extension and the MCP apps server. I work with enterprise clients every day.</p>
                 <ul class="job-list">
                   <li><b>Cut the main processing pipeline by 40–50%</b> in space and processing time, saving most enterprise clients hundreds of thousands of USD a year.</li>
-                  <li><b>Rewrote the tracker and player cores.</b> The tracker now uses a versioned binary batch protocol with gzip in a Web Worker; the player core uses shallow observables for CPU efficiency.</li>
-                  <li><b>Made the frontend bundle ~40% smaller</b> and builds 1–2 minutes faster by migrating from webpack 1 to Parcel and Vite.</li>
-                  <li>Led the full UI rework of the session replayer while keeping legacy support across enterprise deployments.</li>
-                  <li>Shipped offline and conditional recording, feature flags, on-the-fly compression and multi-tab sessions, and moved session heuristics into the browser.</li>
-                  <li>Fixed tracker memory leaks. Set up commit linting, AI PR review, per-module coverage and CI/CD from zero. Shipped under HIPAA, GDPR, CCPA and SOC 2.</li>
+                  <li><b>Rewrote the tracker and player cores:</b> a versioned binary batch protocol with gzip in a Web Worker, and a player on shallow observables. A new opt-in tracker core passes 26/26 test-harness scenarios, against 10–13 today.</li>
+                  <li><b>Made the frontend bundle ~40% smaller</b> and builds 1–2 minutes faster (webpack 1 → Parcel → Vite), and led the full UI rework of the replayer with legacy support across enterprise deployments.</li>
+                  <li><b>Moved session heuristics into the tracker:</b> rage and dead clicks, CPU and memory issues are detected in its worker, not the Go backend. Tracker test coverage up from 48% to 61%.</li>
+                  <li><b>Built scroll maps end to end</b>, from tracker capture to the UI and a Go and ClickHouse service.</li>
+                  <li><b>Built a session-to-video exporter</b> for LLM agents: CDP screencast to ffmpeg, with failed requests and clicks streamed to Kafka.</li>
+                  <li>Built offline and conditional recording and multi-tab sessions; fixed tracker memory leaks. Set up commit linting, AI PR review, per-module coverage and CI/CD from zero, all under HIPAA, GDPR, CCPA and SOC 2.</li>
                 </ul>
                 <button type="button" class="dive-link" data-go="1">Deep dive: what I built, year by year <i>→</i></button>
                 <ul class="tags"><li>TypeScript</li><li>React</li><li>MobX</li><li>Web Workers</li><li>Swift</li><li>React Native</li><li>Flutter</li></ul>
@@ -264,8 +265,8 @@
                 <h3 class="job-co">OpenReplay <span>/ deep dive</span></h3>
                 <div class="job-role">What changed in the tracker and the player, year by year</div>
                 <ul class="dive-facts">
-                  <li><b>~77%</b> of tracker commits</li>
-                  <li><b>~60%</b> of player commits</li>
+                  <li><b>~79%</b> of tracker commits</li>
+                  <li><b>~61%</b> of player commits</li>
                   <li><b>#2</b> contributor overall</li>
                 </ul>
                 <ol class="timeline-log">
@@ -275,8 +276,10 @@
                   <li><time>2023·10</time><p><code>requestIdleCallback</code> commit scheduling and render-lag detection (v10).</p></li>
                   <li><time>2023·11</time><p>Swift iOS tracker, mobile replayer, React Native connector.</p></li>
                   <li><time>2024</time><p>Canvas recording, WebSocket capture, conditional and offline recording, the Spot extension, cross-domain iframes.</p></li>
-                  <li><time>2025</time><p>In-house CSS selector generator, <code>privateMode</code>, network batcher, product-analytics SDK.</p></li>
-                  <li><time>2026</time><p>Binary batch V2/V3 (v18), gzip and heuristics in the worker (v19), Flutter SDK, MCP app, player core rewrite.</p></li>
+                  <li><time>2025</time><p>In-house CSS selector generator, <code>privateMode</code>, network batcher, product-analytics SDK (v17).</p></li>
+                  <li><time>2026·04</time><p>Binary batch V2/V3 (v18), the MCP app, Vite.</p></li>
+                  <li><time>2026·09</time><p>Gzip in the worker, heuristics moved from the backend into the tracker (v19), Flutter SDK.</p></li>
+                  <li><time>2026·10</time><p>Player core rewrite, UI 2.0, scroll maps, an opt-in next-generation tracker core.</p></li>
                 </ol>
               </article>
 
@@ -364,7 +367,7 @@
           <article class="card" data-scene="helix" data-scene-hover>
             <h3 class="card-name"><a href="https://github.com/nick-delirium/dolly" rel="noopener">dolly</a></h3>
             <p class="card-desc">Git-tracked task memory and planning for AI coding agents. Agents log the work; humans validate it.</p>
-            <p class="card-meta">2026 · CLI<span class="state ok">active</span></p>
+            <p class="card-meta">2026 · npm · v1.0<span class="state ok">active</span></p>
           </article>
           <article class="card" data-scene="aurora" data-scene-hover>
             <h3 class="card-name"><a href="https://nick-delirium.github.io/aurora/" rel="noopener">Aurora</a></h3>
@@ -379,7 +382,7 @@
           <article class="card" data-scene="mesh" data-scene-hover>
             <h3 class="card-name"><a href="https://github.com/nick-delirium/lemmy-fennec" rel="noopener">Arctius</a></h3>
             <p class="card-desc">A fast, accessible mobile client for Lemmy, the decentralized link aggregator. 33★ on GitHub.</p>
-            <p class="card-meta">2023–24 · mobile<span class="state">archived</span></p>
+            <p class="card-meta">2023–26 · mobile<span class="state">maintained</span></p>
           </article>
           <article class="card" data-scene="chess" data-scene-hover>
             <h3 class="card-name"><a href="https://nick-delirium.github.io/notalearn/" rel="noopener">Notation Quest</a></h3>
@@ -420,12 +423,12 @@
         </header>
         <div class="stack">
           <div class="stack-row"><span class="stack-k">core</span><ul class="tags big"><li>TypeScript</li><li>JavaScript</li><li>Dart</li><li>Swift</li></ul><ul class="tags"><li>Python</li><li>Go</li></ul></div>
-          <div class="stack-row"><span class="stack-k">ui</span><ul class="tags"><li>React</li><li>Vue</li><li>Svelte</li><li>MobX</li><li>Redux</li><li>redux-saga</li><li>Zustand</li><li>Tailwind</li><li>Styled Components</li></ul></div>
+          <div class="stack-row"><span class="stack-k">ui</span><ul class="tags"><li>React</li><li>Vue</li><li>Svelte</li><li>Solid</li><li>MobX</li><li>Redux</li><li>redux-saga</li><li>Zustand</li><li>Tailwind</li><li>Radix / shadcn</li><li>Styled Components</li></ul></div>
           <div class="stack-row"><span class="stack-k">mobile</span><ul class="tags"><li>React Native</li><li>Expo</li><li>Flutter</li><li>iOS (Swift)</li></ul></div>
-          <div class="stack-row"><span class="stack-k">browser</span><ul class="tags"><li>Web Workers</li><li>CompressionStream</li><li>MutationObserver</li><li>Proxy</li><li>BroadcastChannel</li><li>Canvas</li><li>WebRTC</li><li>Chrome MV3</li></ul></div>
-          <div class="stack-row"><span class="stack-k">tooling</span><ul class="tags"><li>Vite</li><li>Parcel</li><li>Webpack</li><li>Bun</li><li>Jest</li><li>Cypress</li><li>ESLint</li><li>GitHub Actions</li><li>Linear</li></ul></div>
-          <div class="stack-row"><span class="stack-k">server</span><ul class="tags"><li>Node</li><li>Express</li><li>Koa</li><li>FastAPI</li></ul></div>
-          <div class="stack-row"><span class="stack-k">ai</span><ul class="tags"><li>Claude Code</li><li>OpenAI Codex</li><li>MCP</li><li>Ollama</li><li>Copilot</li><li>CodeRabbit</li><li>Greptile</li><li>on-device embeddings</li></ul></div>
+          <div class="stack-row"><span class="stack-k">browser</span><ul class="tags"><li>Web Workers</li><li>CompressionStream</li><li>MutationObserver</li><li>Proxy</li><li>BroadcastChannel</li><li>Canvas</li><li>WebGL2</li><li>WebGPU</li><li>IndexedDB</li><li>PWA</li><li>WebRTC</li><li>Chrome MV3</li></ul></div>
+          <div class="stack-row"><span class="stack-k">tooling</span><ul class="tags"><li>Vite</li><li>Parcel</li><li>Webpack</li><li>esbuild</li><li>Bun</li><li>Jest</li><li>Vitest</li><li>Playwright</li><li>ESLint</li><li>GitHub Actions</li><li>Docker</li><li>Linear</li></ul></div>
+          <div class="stack-row"><span class="stack-k">server</span><ul class="tags"><li>Node</li><li>Express</li><li>Koa</li><li>FastAPI</li><li>ClickHouse</li><li>Kafka</li><li>OpenTelemetry</li><li>ffmpeg</li></ul></div>
+          <div class="stack-row"><span class="stack-k">ai</span><ul class="tags"><li>Claude Code</li><li>OpenAI Codex</li><li>Cursor</li><li>opencode</li><li>pi</li><li>MCP</li><li>Ollama</li><li>Copilot</li><li>CodeRabbit</li><li>Greptile</li><li>transformers.js</li><li>llama.cpp</li><li>on-device embeddings</li></ul></div>
           <div class="stack-row"><span class="stack-k">languages</span><ul class="tags"><li>English · professional</li><li>Russian · native</li><li>French · elementary</li></ul></div>
         </div>
       </div>

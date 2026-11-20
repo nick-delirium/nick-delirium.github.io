@@ -1442,6 +1442,75 @@ button {
     scroll-snap-stop: always;
   }
 }
+/* laptop heights: denser type so the longest role (OpenReplay) still fits one screen */
+@media (min-width: 900px) and (min-height: 600px) and (max-height: 1000px) {
+  .job-impact {
+    font-size: 16px;
+    margin: 10px 0 12px;
+  }
+  .job-list li {
+    font-size: 14px;
+    line-height: 1.42;
+    margin: 3px 0;
+  }
+  .dive-facts {
+    margin: 12px 0 14px;
+  }
+  .timeline-log li {
+    padding: 4px 0;
+  }
+  .timeline-log li::before {
+    top: calc(4px + 0.55em);
+  }
+  .timeline-log p {
+    font-size: 14px;
+    line-height: 1.42;
+  }
+}
+@media (min-width: 900px) and (min-height: 600px) and (max-height: 820px) {
+  .exp-pin {
+    padding-top: calc(var(--top) + 4px);
+    padding-bottom: 2vh;
+  }
+  .exp .sec-head {
+    margin-bottom: 14px;
+  }
+  .job-co {
+    font-size: 30px;
+  }
+  .job-impact {
+    font-size: 15px;
+    line-height: 1.45;
+    margin: 8px 0 10px;
+  }
+  .job-list li {
+    font-size: 13.5px;
+    line-height: 1.38;
+    margin: 2px 0;
+  }
+  .dive-facts {
+    margin: 8px 0 10px;
+  }
+  .timeline-log li {
+    padding: 3px 0;
+  }
+  .timeline-log li::before {
+    top: calc(3px + 0.55em);
+  }
+  .timeline-log p {
+    font-size: 13.5px;
+    line-height: 1.38;
+  }
+  /* the rail already links the deep dive */
+  .exp-slides .tags,
+  .exp-slides .dive-link {
+    display: none;
+  }
+  .exp-ctrl {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+}
 
 /* ── stack ── */
 .stack {

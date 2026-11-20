@@ -2,6 +2,8 @@
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const MAIL = ["nick.delirium", "proton.me"].join("@");
+const OS_VER = ((d) => `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, "0")}`)(new Date());
+const COMMITS = "2,874"; // openreplay/openreplay, Nov 2026
 const SECTIONS = ["whoami", "now", "experience", "projects", "stack", "edu", "offduty", "contact"];
 const LINKS = {
   github: "https://github.com/nick-delirium",
@@ -17,11 +19,11 @@ const LINKS = {
   hsl: "https://github.com/nick-delirium/hsl",
 };
 const PROJECTS = {
-  dolly: "task memory for AI coding agents · TypeScript · 2026",
+  dolly: "task memory for AI coding agents · TypeScript · npm @dlrm/dolly · 2026",
   aurora: "generative wallpapers, liquid-glass UI · WebGL · 2026",
   "disk-check": "see what fills your Mac's disk, clean it safely · Go · 2026",
   "notation-quest": "learn chess notation by playing · Svelte 5 PWA · 2026",
-  arctius: "Lemmy client · React Native / Expo / MobX · 2023–24",
+  arctius: "Lemmy client · React Native / Expo / MobX · 2023–26",
   bluejay: "Reddit client for Android · Flutter · 2023",
   "hansang-lab": "community app for ethnic Koreans in Russia · RN · 2019–20",
   "████.js": "on-device Gemma embeddings for contextual search · classified",
@@ -71,7 +73,7 @@ export function initTerminal(ctx) {
     if (open) {
       if (!greeted) {
         greeted = true;
-        print(`<span class="c-main">DeliriumOS 26.10</span> tty0 · type ${cmd("help")} · <span class="c-dim">tab completes, ↑↓ history, esc closes</span>`);
+        print(`<span class="c-main">DeliriumOS ${OS_VER}</span> tty0 · type ${cmd("help")} · <span class="c-dim">tab completes, ↑↓ history, esc closes</span>`);
       }
       setTimeout(() => input.focus(), 30);
     } else if (document.activeElement === input) input.blur();
@@ -165,14 +167,14 @@ city    Paris, France (CET)`);
       const info = [
         `<span class="c-main">visitor</span>@<span class="c-main">delirium</span>`,
         `<span class="c-dim">─────────────────────</span>`,
-        `<span class="c-alt">OS</span>       DeliriumOS 26.10 (Paris)`,
+        `<span class="c-alt">OS</span>       DeliriumOS ${OS_VER} (Paris)`,
         `<span class="c-alt">Host</span>     OpenReplay · founding engineer`,
         `<span class="c-alt">Uptime</span>   ${yearsSince(2018, 1)} of production frontend`,
         `<span class="c-alt">Shell</span>    zsh + coffee`,
         `<span class="c-alt">Theme</span>    ${s.theme} · ${s.layout} · ${s.res}`,
         `<span class="c-alt">Langs</span>    en · ru · fr (basic)`,
-        `<span class="c-alt">Commits</span>  2,868 @ openreplay (#2 of 73)`,
-        `<span class="c-alt">npm</span>      1.2M dl/mo @openreplay/tracker`,
+        `<span class="c-alt">Commits</span>  ${COMMITS} @ openreplay (#2 of 76)`,
+        `<span class="c-alt">npm</span>      1.8M dl/mo @openreplay/tracker`,
         `<span class="c-alt">Hobbies</span>  EVE · sim racing · watches · anime`,
         `<span class="c-main">███</span><span class="c-alt">███</span><span class="c-hot">███</span><span class="c-dim">███</span>`,
       ];
@@ -245,7 +247,7 @@ city    Paris, France (CET)`);
       print("/home/visitor");
     },
     uname() {
-      print("DeliriumOS 26.10 delirium ascii_64 GNU/Neon");
+      print(`DeliriumOS ${OS_VER} delirium ascii_64 GNU/Neon`);
     },
     ping() {
       print(`PONG from delirium (Paris): time=${(2 + Math.random() * 6).toFixed(1)}ms ttl=64`);
@@ -270,9 +272,9 @@ city    Paris, France (CET)`);
     },
     npm([sub, pkg]) {
       if ((sub === "i" || sub === "install") && pkg) {
-        if (/nikita|delirium/.test(pkg)) {
+        if (/delirium/.test(pkg)) {
           return print(`added <span class="c-main">1 senior engineer</span> in ${yearsSince(2018, 1)}
-0 vulnerabilities · 2,868 commits audited
+0 vulnerabilities · ${COMMITS} commits audited
 run ${cmd("sudo hire delirium")} to finish setup`);
         }
         return print(`npm ERR! 404 '${esc(pkg)}' is not in this registry. try 'delirium'`);
