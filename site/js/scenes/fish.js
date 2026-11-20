@@ -69,7 +69,7 @@ function spawn(i, fromEdge) {
     y = side === 2 ? -L * 0.3 : side === 3 ? Hp + L * 0.3 : Hp * (0.2 + R() * 0.6);
     h = Math.atan2(Hp / 2 - y, W / 2 - x) + (R() - 0.5) * 0.8;
   } else {
-    x = W * (wide ? 0.5 + R() * 0.38 : 0.15 + R() * 0.7);
+    x = W * (wide ? 0.3 + R() * 0.55 : 0.15 + R() * 0.7);
     y = Hp * (0.2 + R() * 0.6);
     h = R() * TAU;
   }
@@ -142,8 +142,10 @@ function step(f, t, dt, input, flee) {
     // nears and crosses the edge, so a fish skimming along it doesn't flicker on and off.
     const wide = W > Hp * 1.2;
     const m = f.L * 0.45;
-    // keep right of the text only where there's room for it
-    const x0 = openPond ? m : W > Hp * 1.6 ? W * 0.37 : wide ? W * 0.22 : m, x1 = W - m, y0 = m, y1 = Hp - m;
+    // the text column is masked down behind the copy, so the keep-right zone stays narrow;
+    // the right and bottom edges sit a little further in, so fish don't park in that corner
+    const x0 = openPond ? m : Math.max(m, W > Hp * 1.6 ? W * 0.15 : wide ? W * 0.08 : 0);
+    const x1 = W - m - f.L * 0.3, y0 = m, y1 = Hp - m - f.L * 0.3;
     const look = f.L * 1.2;
     const lx = f.x + ch * look, ly = f.y + sh * look;
     const band = f.L * 0.35;
