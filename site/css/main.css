@@ -1521,7 +1521,7 @@ button {
     font-size: 13.5px;
     line-height: 1.38;
   }
-  /* the rail already links the deep dive */
+  /* the rail already links the timeline */
   .exp-slides .tags,
   .exp-slides .dive-link {
     display: none;
