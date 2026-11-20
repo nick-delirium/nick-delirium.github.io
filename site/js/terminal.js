@@ -68,15 +68,21 @@ export function initTerminal(ctx) {
   const cmd = (c, label = c) => `<a href="#" data-cmd="${esc(c)}" class="c-alt">${esc(label)}</a>`;
   const pre = (lines) => `<pre>${lines.join("\n")}</pre>`;
 
+  let returnTo = null;
   function toggle(open = el.hidden) {
+    if (open === !el.hidden) return open && input.focus();
     el.hidden = !open;
     if (open) {
+      returnTo = document.activeElement;
       if (!greeted) {
         greeted = true;
         print(`<span class="c-main">DeliriumOS ${OS_VER}</span> tty0 · type ${cmd("help")} · <span class="c-dim">tab completes, ↑↓ history, esc closes</span>`);
       }
       setTimeout(() => input.focus(), 30);
-    } else if (document.activeElement === input) input.blur();
+    } else if (el.contains(document.activeElement) || document.activeElement === document.body) {
+      // hand focus back to whatever opened the terminal
+      (returnTo?.isConnected && returnTo !== document.body ? returnTo : document.getElementById("btn-term"))?.focus({ preventScroll: true });
+    }
   }
 
   const go = (id) => {
@@ -261,7 +267,7 @@ city    Paris, France (CET)`);
     },
     async sudo(args) {
       const line = args.join(" ");
-      if (/^hire( nikita| delirium)?\b/.test(line)) return hire();
+      if (/^hire( delirium)?\b/.test(line)) return hire();
       if (/^apt(-get)? install bees/.test(line)) return C.bees();
       if (/^rm /.test(line)) return C.rm();
       print(`<span class="c-hot">visitor is not in the sudoers file. This incident will be reported.</span>`);

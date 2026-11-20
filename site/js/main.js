@@ -49,6 +49,8 @@ if (saved.v !== SETTINGS_VERSION) {
   delete saved.res;
   delete saved.crt;
 }
+// motion follows the OS setting until the visitor flips it themselves
+if (!saved.motionSet) delete saved.motion;
 const settings = { ...defaults, ...saved, v: SETTINGS_VERSION };
 const query = new URLSearchParams(location.search);
 for (const k of ["theme", "layout", "res"]) if (query.get(k)) settings[k] = query.get(k);
@@ -116,9 +118,15 @@ function apply() {
   renderer.setOptions({ bloom: settings.bloom, lens: settings.lens, motion: settings.motion });
   pond.setOptions({ bloom: false, lens: false, motion: settings.motion });
 
-  $$("[data-set-theme]").forEach((b) => b.classList.toggle("on", b.dataset.setTheme === settings.theme));
-  $$("[data-set-layout]").forEach((b) => b.classList.toggle("on", b.dataset.setLayout === layout));
-  $$("[data-set-res]").forEach((b) => b.classList.toggle("on", b.dataset.setRes === settings.res));
+  const mark = (sel, key, val) =>
+    $$(sel).forEach((b) => {
+      const on = b.dataset[key] === val;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+  mark("[data-set-theme]", "setTheme", settings.theme);
+  mark("[data-set-layout]", "setLayout", layout);
+  mark("[data-set-res]", "setRes", settings.res);
   $$("[data-set-fx]").forEach((i) => (i.checked = !!settings[i.dataset.setFx]));
 
   applied = { ...settings };
@@ -127,8 +135,14 @@ function apply() {
 
 export function setSetting(k, v) {
   settings[k] = v;
+  if (k === "motion") settings.motionSet = true;
   apply();
 }
+matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", (e) => {
+  if (settings.motionSet) return;
+  settings.motion = !e.matches;
+  apply();
+});
 
 /* ═════════════ experience slider ═════════════ */
 // Pinned mode (desktop): the section is n screens tall; scroll position picks the role.
@@ -160,7 +174,11 @@ function setupExperience() {
       s.classList.toggle("prev", k < i);
       s.inert = k !== i;
     });
-    rail.forEach((b, k) => b.classList.toggle("on", k === i));
+    rail.forEach((b, k) => {
+      b.classList.toggle("on", k === i);
+      if (k === i) b.setAttribute("aria-current", "step");
+      else b.removeAttribute("aria-current");
+    });
     counter.textContent = String(i + 1).padStart(2, "0");
     prev.disabled = i === 0;
     next.disabled = i === n - 1;
@@ -210,6 +228,7 @@ function setupExperience() {
           scrollTo({ top: edge, behavior: "instant" });
           holdCap = now + 900;
           holdUntil = now + 250;
+          catchWheel();
           holdDir = down ? 1 : -1;
           holdEdge = edge;
           prevY = edge;
@@ -222,20 +241,27 @@ function setupExperience() {
     prevY = y;
     prevT = now;
   };
-  addEventListener(
-    "wheel",
-    (e) => {
-      const now = performance.now();
-      if (now < holdUntil && Math.sign(e.deltaY) === holdDir) {
-        e.preventDefault();
-        extendHold(now);
-      }
-    },
-    { passive: false }
-  );
+  // a non-passive wheel listener makes every wheel event wait on the main thread, so it only exists during a hold
+  const onWheel = (e) => {
+    const now = performance.now();
+    if (now < holdUntil && Math.sign(e.deltaY) === holdDir) {
+      e.preventDefault();
+      extendHold(now);
+    }
+  };
+  let wheelTimer = 0;
+  function catchWheel() {
+    clearTimeout(wheelTimer);
+    addEventListener("wheel", onWheel, { passive: false });
+    wheelTimer = setTimeout(() => removeEventListener("wheel", onWheel), 950);
+  }
   document.addEventListener("click", (e) => {
     if (e.target.closest('a[href^="#"]')) suppress(1600);
   });
+  // keyboard scrolling and focus moves are deliberate: never catch them at the edges
+  const NAV_KEYS = new Set(["Home", "End", "PageUp", "PageDown", " ", "ArrowUp", "ArrowDown", "Tab"]);
+  addEventListener("keydown", (e) => NAV_KEYS.has(e.key) && suppress(1600));
+  document.addEventListener("focusin", () => suppress(1200));
   const sync = () => {
     if (!pinned.matches) return;
     rubber();
@@ -438,16 +464,24 @@ for (const el of $$("[data-scene-hover]")) {
   };
   el.addEventListener("pointerenter", (e) => e.pointerType === "mouse" && hoverTo(el, 120));
   el.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && leave(e));
-  el.addEventListener("focusin", (e) => e.target === el && hoverTo(el, 120));
+  el.addEventListener("focusin", (e) => e.target.closest("[data-scene-hover]") === el && hoverTo(el, 120));
   el.addEventListener("focusout", leave);
 }
 
 /* ═════════════ settings panel ═════════════ */
 const sys = $("#sys");
 const sysBtn = $("#btn-sys");
+let sysReturn = null;
 function toggleSys(open = sys.hidden) {
+  if (open === !sys.hidden) return;
   sys.hidden = !open;
   sysBtn?.setAttribute("aria-expanded", String(open));
+  if (open) {
+    sysReturn = document.activeElement;
+    setTimeout(() => sys.querySelector("button.on, button")?.focus(), 30);
+  } else if (sys.contains(document.activeElement)) {
+    (sysReturn?.isConnected ? sysReturn : $("#btn-term"))?.focus();
+  }
 }
 sysBtn?.addEventListener("click", () => toggleSys());
 $(".sys-x").addEventListener("click", () => toggleSys(false));
@@ -529,7 +563,8 @@ async function boot(force = false) {
     ["ACCESS GRANTED", "hl", 360],
   ];
   for (let i = 0; i < lines.length && !skip; i++) {
-    const [txt, cls, ms] = lines[i];
+    let [txt, cls, ms] = lines[i];
+    if (innerWidth < 640) txt = txt.replace(/ \.{3,} /, " · ");
     log.insertAdjacentHTML("beforeend", `<div class="${cls}">${txt}</div>`);
     barEl.style.width = ((i + 1) / lines.length) * 100 + "%";
     await sleep(ms);
@@ -555,18 +590,6 @@ function scramble(el) {
     else el.textContent = final;
   };
   tick();
-}
-
-function typeOut(el) {
-  const text = el.dataset.type;
-  if (!settings.motion) return;
-  el.textContent = "";
-  let i = 0;
-  const step = () => {
-    el.textContent = text.slice(0, ++i);
-    if (i < text.length) setTimeout(step, 28 + Math.random() * 50);
-  };
-  setTimeout(step, 300);
 }
 
 // The one authored motion moment outside the ASCII viewport: each section title decodes once,
@@ -612,7 +635,42 @@ function fillDynamic() {
   for (const el of $$(".js-mail")) el.href = `mailto:${el.dataset.u}@${el.dataset.d}`;
   const addr = "nick.delirium" + "@" + "proton.me";
   for (const el of $$(".js-mail-text")) el.textContent = addr;
+  // for visitors on webmail, where mailto: opens nothing
+  for (const b of $$(".js-copy-mail"))
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(addr);
+        toast(`◢ copied <b>${addr}</b>`);
+      } catch {
+        toast(`◢ <b>${addr}</b>`);
+      }
+    });
 }
+
+// The pond only reaches full strength right of the hero text, so the fish never swim across the copy.
+function heroClear() {
+  // measure the text itself, not the block boxes: those span the whole column
+  const range = document.createRange();
+  let right = 0;
+  for (const el of $(".hero .page-inner").children) {
+    if (!el.offsetParent) continue;
+    range.selectNodeContents(el);
+    right = Math.max(right, range.getBoundingClientRect().right);
+  }
+  root.style.setProperty("--hero-clear", Math.round(right) + "px");
+}
+addEventListener("resize", heroClear);
+
+// Below 980px the section links fold into a menu behind the "index" button.
+const topbar = $(".topbar");
+const navBtn = $("#btn-nav");
+function toggleNav(open = !topbar.classList.contains("nav-open")) {
+  topbar.classList.toggle("nav-open", open);
+  navBtn.setAttribute("aria-expanded", String(open));
+}
+navBtn.addEventListener("click", () => toggleNav());
+$(".nav").addEventListener("click", (e) => e.target.closest("a") && toggleNav(false));
+document.addEventListener("pointerdown", (e) => !topbar.contains(e.target) && toggleNav(false));
 
 const clockEl = $("#clock");
 const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -677,7 +735,7 @@ for (const id of ["#btn-term", "#btn-term2", "#btn-term3"]) $(id)?.addEventListe
 
 addEventListener("keydown", (e) => {
   const typing = e.target.closest("input, textarea, [contenteditable]");
-  if (e.key === "`" || e.key === "~") {
+  if (e.key === "`" || (e.key === "~" && !typing)) {
     e.preventDefault();
     term.toggle();
     return;
@@ -685,9 +743,13 @@ addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     term.toggle(false);
     toggleSys(false);
+    if (topbar.classList.contains("nav-open")) {
+      toggleNav(false);
+      navBtn.focus();
+    }
     return;
   }
-  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (typing || e.metaKey || e.ctrlKey || e.altKey || sys.hidden) return;
   if (e.key === "t") setSetting("theme", THEMES[(THEMES.indexOf(settings.theme) + 1) % THEMES.length]);
   if (e.key === "l") setSetting("layout", LAYOUTS[(LAYOUTS.indexOf(settings.layout) + 1) % LAYOUTS.length]);
 });
@@ -703,15 +765,15 @@ const fontsReady = Promise.race([
   Promise.all([document.fonts?.load('12px "JetBrains Mono"'), document.fonts?.load('700 16px "Noto Sans JP"', "ラ")]),
   sleep(2200),
 ]);
+heroClear();
 fontsReady.then(() => {
   renderer.setPalette(palette());
   pond.setPalette(palette());
+  heroClear();
 });
 await boot();
 setupTitleDecode();
 scheduleBleed(true);
-const typed = $(".typed");
-if (typed) typeOut(typed);
 if (!store.get("nd.seen", false)) {
   store.set("nd.seen", true);
   if (finePointer) setTimeout(() => toast("◢ press <b>`</b> for a terminal &nbsp;·&nbsp; try <b>sys</b> or <b>help</b>", 6000), 900);

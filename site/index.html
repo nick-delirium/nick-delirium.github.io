@@ -75,7 +75,7 @@
     <a class="brand" href="#whoami" aria-label="delirium — top">
       <span class="brand-mark">◢</span><span class="brand-name">delirium</span>
     </a>
-    <nav class="nav" aria-label="Sections">
+    <nav class="nav" id="nav-links" aria-label="Sections">
       <a href="#whoami" data-nav="whoami">whoami</a>
       <a href="#now" data-nav="now">now</a>
       <a href="#experience" data-nav="experience">experience</a>
@@ -87,6 +87,7 @@
     </nav>
     <div class="top-tools">
       <span class="clock" title="Paris local time"><i>PAR</i> <span id="clock">--:--:--</span></span>
+      <button class="tool-btn tool-nav" id="btn-nav" type="button" aria-expanded="false" aria-controls="nav-links">index</button>
       <button class="tool-btn" id="btn-term" type="button" title="Terminal ( ` )" aria-label="Open terminal">&gt;_</button>
       <button class="tool-btn tool-sys" id="btn-sys" type="button" aria-expanded="false" aria-controls="sys" title="Display settings" hidden>SYS</button>
     </div>
@@ -101,7 +102,7 @@
       <div class="sys-themes">
         <button type="button" data-set-theme="night-city" class="swatch"><span class="sw" style="--a:#fcee0a;--b:#00f0ff;--c:#ff003c;--d:#07080c"></span>night city</button>
         <button type="button" data-set-theme="neon-noir" class="swatch"><span class="sw" style="--a:#ff2a6d;--b:#05d9e8;--c:#b967ff;--d:#0a0618"></span>neon noir</button>
-        <button type="button" data-set-theme="phosphor" class="swatch"><span class="sw" style="--a:#39ff14;--b:#ffb000;--c:#ff4040;--d:#020a04"></span>phosphor</button>
+        <button type="button" data-set-theme="phosphor" class="swatch"><span class="sw" style="--a:#39ff14;--b:#ffb000;--c:#ff4646;--d:#020a04"></span>phosphor</button>
         <button type="button" data-set-theme="smog" class="swatch"><span class="sw" style="--a:#ff8c1a;--b:#2de2c4;--c:#ff3b30;--d:#0c0704"></span>smog amber</button>
       </div>
     </fieldset>
@@ -166,6 +167,7 @@
       <div class="page-inner">
         <h1 class="hero-name">delirium<span class="hero-dot" aria-hidden="true">.</span></h1>
         <p class="hero-role">Senior Software Engineer <span>· Paris</span></p>
+        <p class="status">Open to senior frontend &amp; AI engineering roles in Paris</p>
         <p class="print-only print-id"><b class="js-print-name">delirium</b>Senior Software Engineer · Paris, France · <span class="js-mail-text">mail [at] proton.me</span> · github.com/nick-delirium · linkedin.com/in/deliriumnick · nick-delirium.github.io</p>
         <p class="hero-lede">I build the code that records the web, and the player that replays it.</p>
         <p class="hero-pitch">
@@ -186,7 +188,6 @@
             <button type="button" id="btn-print">Save CV</button>
           </nav>
         </div>
-        <p class="status"><span class="status-dot" aria-hidden="true"></span>Open to senior frontend &amp; AI engineering roles in Paris</p>
       </div>
       <div class="scroll-cue" aria-hidden="true">scroll</div>
     </section>
@@ -220,7 +221,6 @@
             </div>
           </li>
         </ol>
-        </div>
       </div>
     </section>
 
@@ -361,7 +361,7 @@
       <div class="page-inner">
         <header class="sec-head">
           <h2 id="h-proj" class="sec-title" data-text="PROJECTS">PROJECTS</h2>
-          <span class="sec-meta">// side projects · hover to switch the feed</span>
+          <span class="sec-meta">// side projects · <span class="hint-fine">hover to switch the feed</span><span class="hint-touch">the feed follows your scroll</span></span>
         </header>
         <div class="cards">
           <article class="card" data-scene="helix" data-scene-hover>
@@ -409,7 +409,6 @@
             <p class="card-desc">Smaller experiments, forks and archives.</p>
             <p class="card-meta">github.com/nick-delirium</p>
           </article>
-        </div>
         </div>
       </div>
     </section>
@@ -461,7 +460,7 @@
       <div class="page-inner narrow">
         <header class="sec-head">
           <h2 id="h-off" class="sec-title" data-text="OFF-DUTY">OFF-DUTY</h2>
-          <span class="sec-meta">// hover a line, or a title</span>
+          <span class="sec-meta">// <span class="hint-fine">hover a line, or a title</span><span class="hint-touch">every line has its own feed</span></span>
         </header>
         <ul class="hobbies">
           <li data-scene="stargate" data-scene-hover tabindex="0"><span class="hb-k">EVE Online</span><span class="hb-v">fly safe, o7</span></li>
@@ -482,10 +481,14 @@
           <span class="sec-meta">// open channel</span>
         </header>
         <p class="lead">An interesting problem, an ambitious team, or just a chat about session replay, AI or EVE? Get in touch.</p>
+        <p class="status">Open to senior frontend &amp; AI engineering roles in Paris</p>
         <div class="contact">
-          <a class="contact-line js-mail" href="#contact" data-u="nick.delirium" data-d="proton.me">
-            <span class="cl-k">mail</span><span class="cl-v js-mail-text">nick.delirium [at] proton.me</span><span class="cl-go">↗</span>
-          </a>
+          <div class="contact-mail">
+            <a class="contact-line js-mail" href="#contact" data-u="nick.delirium" data-d="proton.me">
+              <span class="cl-k">mail</span><span class="cl-v js-mail-text">nick.delirium [at] proton.me</span><span class="cl-go">↗</span>
+            </a>
+            <button type="button" class="cl-copy js-copy-mail" aria-label="Copy the email address">copy</button>
+          </div>
           <a class="contact-line" href="https://github.com/nick-delirium" rel="noopener">
             <span class="cl-k">github</span><span class="cl-v">github.com/nick-delirium</span><span class="cl-go">↗</span>
           </a>

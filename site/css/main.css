@@ -226,11 +226,6 @@ button {
   position: relative;
   white-space: nowrap;
 }
-.nav a i {
-  font-style: normal;
-  color: var(--fg-mute);
-  margin-right: 5px;
-}
 .nav a:hover,
 .nav a.on {
   color: var(--main);
@@ -420,7 +415,7 @@ button {
   appearance: none;
   width: 26px;
   height: 14px;
-  border: 1px solid var(--fg-faint);
+  border: 1px solid var(--fg-mute);
   position: relative;
   cursor: pointer;
   margin: 0;
@@ -432,7 +427,7 @@ button {
   left: 2px;
   width: 8px;
   height: 8px;
-  background: var(--fg-faint);
+  background: var(--fg-mute);
   transition: 0.15s;
 }
 .toggles input:checked {
@@ -538,7 +533,7 @@ button {
   bottom: 6px;
   border-width: 0 2px 2px 0;
 }
-.viz-hud.switch .hud-tl {
+.fx-glitch .viz-hud.switch .hud-tl {
   animation: hudglitch 0.45s steps(2);
 }
 @keyframes hudglitch {
@@ -814,13 +809,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  padding: 13px 22px;
-  border: 1px solid color-mix(in srgb, var(--fg) 45%, transparent);
-  color: var(--fg);
-  font: 500 12px var(--mono);
+  padding: 14px 24px;
+  border: 1px solid var(--main);
+  color: var(--on-main);
+  font: 700 12px var(--mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  background: none;
+  background: var(--main);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
   transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
 .hero-cta i {
@@ -831,6 +827,9 @@ button {
   background: var(--fg);
   color: var(--bg);
   border-color: var(--fg);
+}
+.hero-cta:focus-visible {
+  outline-offset: 4px;
 }
 .hero-cta:hover i {
   transform: translateX(4px);
@@ -857,19 +856,24 @@ button {
 }
 .status {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 10px;
   margin: 0;
-  font: 500 11px var(--mono);
-  letter-spacing: 0.08em;
-  color: var(--fg-mute);
+  font: 500 13px/1.45 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--fg-dim);
 }
 .status::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  flex: none;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--main);
+  background: var(--alt);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--alt) 60%, transparent);
+}
+.hero-role + .status {
+  margin-top: 12px;
 }
 .scroll-cue {
   position: absolute;
@@ -979,8 +983,17 @@ button {
 }
 @container (max-width: 700px) {
   .entry {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "name meta" "body body";
+  }
+}
+@container (max-width: 420px) {
+  .entry {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "name" "meta" "body";
+  }
+  .entry-meta {
+    white-space: normal;
   }
 }
 .cards {
@@ -1033,6 +1046,11 @@ button {
 .card-name a {
   color: var(--fg);
 }
+.card-name a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
 .card:hover .card-name a,
 .card.on .card-name a {
   color: var(--main);
@@ -1079,7 +1097,7 @@ button {
   }
   .card-meta {
     padding-top: 8px;
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.04em;
     white-space: nowrap;
   }
@@ -1096,6 +1114,8 @@ button {
   background: var(--fg);
   color: var(--fg);
   letter-spacing: -0.05em;
+}
+.fx-glitch .redact {
   animation: redact 4s steps(1) infinite;
 }
 @keyframes redact {
@@ -1326,7 +1346,7 @@ button {
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg-2) 80%, transparent);
   color: var(--fg);
-  font: 500 12px var(--mono);
+  font: 500 12px/1.45 var(--mono);
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
@@ -1552,7 +1572,7 @@ button {
   gap: 8px 22px;
   margin: 0 0 clamp(18px, 3vh, 28px);
   padding: 0;
-  font: 500 13px var(--mono);
+  font: 500 13px/1.5 var(--mono);
   color: var(--fg-dim);
 }
 .certs li::before {
@@ -1570,7 +1590,9 @@ button {
 .stack-row .tags + .tags {
   grid-column: 2;
   margin-top: -2px;
-  opacity: 0.75;
+}
+.stack-row .tags + .tags li {
+  border-style: dashed;
 }
 
 /* ── hobbies ── */
@@ -1636,6 +1658,39 @@ button {
   gap: 10px;
   max-width: 760px;
 }
+#contact .status {
+  margin: -6px 0 22px;
+}
+.contact-mail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+.cl-copy {
+  min-width: 76px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-2) 85%, transparent);
+  color: var(--alt);
+  font: 600 12px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.cl-copy:hover {
+  border-color: var(--alt);
+  background: var(--alt);
+  color: var(--bg);
+}
+@media (max-width: 560px) {
+  .contact-mail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cl-copy {
+    min-height: 44px;
+  }
+}
 .contact-line {
   display: grid;
   grid-template-columns: 110px 1fr auto;
@@ -1678,7 +1733,7 @@ button {
   margin-top: clamp(28px, 6vh, 64px);
   padding-top: 16px;
   border-top: 1px solid var(--line);
-  font: 500 12px var(--mono);
+  font: 500 12px/1.5 var(--mono);
   color: var(--fg-mute);
 }
 
@@ -1880,6 +1935,11 @@ button {
   font: inherit;
   caret-color: var(--main);
 }
+@media (pointer: coarse) {
+  .term-in input {
+    font-size: 16px;
+  }
+}
 
 /* ═════════════ toast ═════════════ */
 .toast {
@@ -1902,10 +1962,10 @@ button {
 }
 
 /* ═════════════ responsive ═════════════ */
-@media (max-width: 1180px) {
-  .nav a i {
-    display: none;
-  }
+.tool-nav {
+  display: none;
+  color: var(--fg);
+  text-transform: uppercase;
 }
 @media (max-width: 980px) {
   .nav {
@@ -1913,6 +1973,35 @@ button {
   }
   .topbar {
     justify-content: space-between;
+  }
+  .tool-nav {
+    display: block;
+  }
+  .nav-open .nav {
+    position: fixed;
+    top: var(--top);
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 8px 10px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 18px 30px color-mix(in srgb, var(--bg) 70%, transparent);
+  }
+  .nav-open .nav a {
+    padding: 14px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .nav-open .nav a.on::after {
+    left: 0;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    height: auto;
   }
 }
 @media (max-width: 860px) {
@@ -2078,16 +2167,18 @@ button {
   .status,
   .scroll-cue,
   .skip,
-  .kicker,
   .hero-name,
-  .typed::after,
+  #now,
+  .job-dive,
+  .cl-go,
+  .cl-copy,
+  .tool-nav,
   #offduty,
   #edu .lead,
   .entry-redacted,
   #contact .lead,
   #btn-term3,
   .foot,
-  .sec-idx,
   .sec-meta,
   .exp-rail,
   .exp-ctrl,
@@ -2134,27 +2225,9 @@ button {
   .hero-role {
     margin: 4pt 0;
   }
-  .tag-hot {
-    background: none;
-    color: #111;
-    padding: 0;
-    clip-path: none;
-  }
   .hero-pitch {
     margin: 4pt 0;
     max-width: none;
-  }
-  .stats {
-    margin: 6pt 0;
-    border: 0;
-  }
-  .stat,
-  .stat + .stat {
-    padding: 0 8pt 0 0;
-    border: 0;
-  }
-  .stat dd b {
-    font-size: 14pt;
   }
   .sec-head {
     margin: 12pt 0 6pt;
@@ -2182,6 +2255,12 @@ button {
     margin-bottom: 9pt;
     break-inside: avoid;
   }
+  .exp-slides > .job:first-child {
+    break-inside: auto;
+  }
+  .job-list li {
+    break-inside: avoid;
+  }
   .job-co {
     font-size: 13pt;
   }
@@ -2195,15 +2274,39 @@ button {
     font-size: 10pt;
   }
   .cards {
-    grid-template-columns: 1fr 1fr;
-    gap: 6pt;
+    display: block;
   }
   .card {
+    display: block;
     clip-path: none;
-    border: 1px solid #ccc;
-    padding: 6pt 8pt;
+    border: 0;
+    background: none;
+    padding: 2pt 0;
     break-inside: avoid;
     transform: none !important;
+  }
+  .card-name,
+  .card-desc,
+  .card-meta {
+    display: inline;
+  }
+  .card-name::after {
+    content: " · ";
+    font-weight: 400;
+  }
+  .card-desc {
+    font-size: 10pt;
+  }
+  .card-meta {
+    margin-left: 6pt;
+    padding: 0;
+    border: 0;
+    font-size: 8pt;
+  }
+  .card-meta .state,
+  .state::before,
+  .card-name a::before {
+    display: none;
   }
   .card::after,
   .card-more,
@@ -2211,7 +2314,7 @@ button {
     display: none;
   }
   .card-name {
-    font-size: 12pt;
+    font-size: 10.5pt;
   }
   .timeline-log li {
     padding: 2pt 0;
@@ -2246,10 +2349,6 @@ button {
     clip-path: none;
     border: 0;
     padding: 2pt 0;
-  }
-  .reveal {
-    opacity: 1 !important;
-    transform: none !important;
   }
   #edu,
   #contact {
@@ -2371,10 +2470,28 @@ button {
 #btn-sys[hidden] {
   display: none;
 }
+.hint-touch {
+  display: none;
+}
+@media (hover: none), (pointer: coarse) {
+  .hint-fine {
+    display: none;
+  }
+  .hint-touch {
+    display: inline;
+  }
+  .hero-links a,
+  .hero-links button {
+    padding: 13px 0;
+  }
+  .exp-rail button {
+    min-height: 44px;
+  }
+}
 /* phones run the background layout: content cards sit over the animation, so keep text crisp and drop the caption strip */
 @media (max-width: 860px) {
   [data-layout="bg"] .page-inner {
-    background: color-mix(in srgb, var(--bg) 74%, transparent);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
   }
   [data-layout="bg"] .hud-tl {
     display: none;
@@ -2421,13 +2538,20 @@ button {
   transition: background 0.6s;
 }
 .hero-mode[data-layout="bg"] .hero .page-inner {
-  background: color-mix(in srgb, var(--bg) 35%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
-/* wide screens: the text column sits on the left, so the pond fades behind it */
+/* fish may pass under the copy, never across it: a halo keeps every line readable */
+.hero-mode .hero .page-inner > * {
+  text-shadow: 0 0 2px var(--bg), 0 0 10px var(--bg), 0 0 18px var(--bg);
+}
+.hero-mode .hero .hero-cta {
+  text-shadow: none;
+}
+/* wide screens: the pond only reaches full strength right of the text column (main.js measures it) */
 @media (min-width: 861px) {
   .hero-mode #pond {
-    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.28) 36%, #000 56%);
-    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.28) 36%, #000 56%);
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0, rgba(0, 0, 0, 0.14) var(--hero-clear, 50%), #000 calc(var(--hero-clear, 50%) + 12vw));
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0, rgba(0, 0, 0, 0.14) var(--hero-clear, 50%), #000 calc(var(--hero-clear, 50%) + 12vw));
   }
 }
 /* ═════════════ last page: an empty pond ═════════════ */
