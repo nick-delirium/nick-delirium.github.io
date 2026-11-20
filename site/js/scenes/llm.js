@@ -117,7 +117,6 @@ function weights(key, layer, n) {
 export default {
   id: "llm",
   title: "NEXT_TOKEN",
-  caption: "how a language model writes: one token at a time",
 
   init(f, S) {
     lay = layout(S);

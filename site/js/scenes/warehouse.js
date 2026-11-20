@@ -31,7 +31,6 @@ function newBox(lane, x) {
 export default {
   id: "warehouse",
   title: "FULFILMENT_FLOOR",
-  caption: "every parcel signed, scanned, sealed // ozon wms",
 
   init(f, S) {
     r = rng(5);

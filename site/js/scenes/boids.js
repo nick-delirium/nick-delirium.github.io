@@ -41,7 +41,6 @@ function build(S) {
 export default {
   id: "boids",
   title: "COMMUNITY_FLOCK",
-  caption: "strangers in a new city, finding each other",
 
   init(f, S) {
     build(S);

@@ -334,7 +334,6 @@ function drawTitan(f, t) {
 export default {
   id: "aot",
   title: "ODM_GEAR",
-  caption: "anchor, swing, release. the wall is watching",
 
   init(f, S) {
     ({ cols, rows, ax } = S);

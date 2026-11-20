@@ -16,9 +16,6 @@ export default {
   get title() {
     return PARTS[cur].scene.title;
   },
-  get caption() {
-    return PARTS[cur].scene.caption;
-  },
 
   init(f, S) {
     PARTS[cur].scene.init?.(f, S);

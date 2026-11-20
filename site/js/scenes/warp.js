@@ -32,7 +32,6 @@ function hud(f, x, y, str, hue, v) {
 export default {
   id: "warp",
   title: "HYPERSPACE_BUILD",
-  caption: "bundle in, light out // webpack at x3",
 
   init(f, S) {
     r = rng(7);

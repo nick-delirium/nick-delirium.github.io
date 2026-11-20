@@ -141,7 +141,6 @@ function prof(q, t) {
 export default {
   id: "solaris",
   title: "SOLARIS",
-  caption: "an ocean that answers in shapes",
 
   init(f, S) {
     const { cols, rows, ax } = S;

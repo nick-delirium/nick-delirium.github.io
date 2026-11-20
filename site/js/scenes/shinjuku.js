@@ -126,7 +126,6 @@ function facade(s, zw, Y, dist, t, out) {
 export default {
   id: "shinjuku",
   title: "SHINJUKU_2077",
-  caption: "neon kanji, wet asphalt, last train long gone",
 
   init(f, S) {
     build(S);

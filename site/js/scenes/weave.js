@@ -104,7 +104,6 @@ function sprite(f, p, t, hue, v) {
 export default {
   id: "weave",
   title: "SOCIAL_WEAVE",
-  caption: "strangers in, community out",
 
   init(f, S) {
     R = rng(1988);

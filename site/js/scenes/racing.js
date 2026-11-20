@@ -192,7 +192,6 @@ function drawCar(f, cols, rows, cx, by, hw, ax, clip, o) {
 export default {
   id: "racing",
   title: "LIGHTS_OUT",
-  caption: "late on the brakes, early on the throttle",
 
   init(f, S) {
     R = rng(44);

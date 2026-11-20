@@ -459,7 +459,6 @@ function hud(f, S, lines) {
 export default {
   id: "dune",
   title: "SPICE_AND_ICE",
-  caption: "two worlds i keep rereading",
 
   init(f, S) {
     R = rng(10191);

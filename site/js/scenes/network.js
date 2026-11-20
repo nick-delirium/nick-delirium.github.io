@@ -74,7 +74,6 @@ function build(S) {
 export default {
   id: "network",
   title: "FEDIVERSE_GRAPH",
-  caption: "no center, every instance a peer",
 
   init(f, S) {
     build(S);

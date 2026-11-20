@@ -722,7 +722,6 @@ function face(f, S, tq, t) {
 export default {
   id: "neuromancer",
   title: "NEUROMANCER",
-  caption: "static sky, a deck, and five layers of ice",
 
   init(f, S) {
     R = rng(1984);

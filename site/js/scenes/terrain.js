@@ -52,7 +52,6 @@ function hud(f, x, y, str, hue, v) {
 export default {
   id: "terrain",
   title: "FLIGHT_LOW_PASS",
-  caption: "LED → CDG // following the river at 400ft",
 
   init(f, S) {
     if (!hm) hm = new Float32Array(MW * MD);

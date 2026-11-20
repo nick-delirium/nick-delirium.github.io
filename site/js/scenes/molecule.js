@@ -69,7 +69,6 @@ let proj = [];
 export default {
   id: "molecule",
   title: "C8H10N4O2",
-  caption: "chemical engineering degree, now running on caffeine",
 
   init(f, S) {
     zbuf = new Float32Array(S.cols * S.rows);

@@ -31,7 +31,6 @@ function spawn(d, cols, rows, fresh) {
 export default {
   id: "plasma",
   title: "STACK_RAIN",
-  caption: "everything i reach for, falling in order",
 
   init(f, S) {
     r = rng(7);

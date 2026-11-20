@@ -30,7 +30,6 @@ function spawn(p, i, S, r, anywhere) {
 export default {
   id: "flow",
   title: "WINDFIELD",
-  caption: "a thousand threads, one current",
 
   init(f, S) {
     build(S);

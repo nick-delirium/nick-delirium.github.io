@@ -74,7 +74,6 @@ const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export default {
   id: "chess",
   title: "NOTATION_TRAINER",
-  caption: "1. e4 — every square has a name",
 
   frame(f, t, dt, S) {
     const { cols, rows, ax } = S;

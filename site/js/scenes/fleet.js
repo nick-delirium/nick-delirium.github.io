@@ -244,7 +244,6 @@ function drawFlagship(f, t, tc) {
 export default {
   id: "fleet",
   title: "FLEET_ENGAGEMENT",
-  caption: "twelve thousand ships, one quiet flagship",
 
   init(f, S) {
     R = rng(796);

@@ -36,7 +36,6 @@ function hexPts(cx, cy, R, ax) {
 export default {
   id: "babel",
   title: "LIBRARY_OF_BABEL",
-  caption: "every book that could be written, shelved somewhere",
 
   init(f, S) {
     const { cols, rows, ax } = S;

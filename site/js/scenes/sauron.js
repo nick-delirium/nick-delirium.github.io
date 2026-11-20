@@ -30,7 +30,6 @@ function spawn(p, cols, rows, fresh) {
 export default {
   id: "sauron",
   title: "BARAD_DUR",
-  caption: "a tower, a fire, a gaze across the plain",
 
   init(f, S) {
     const { cols, rows, ax } = S;

@@ -174,7 +174,6 @@ function drawBlock(f, b, reveal, t, S) {
 export default {
   id: "builder",
   title: "SITE_FORGE",
-  caption: "text a brand name, get a website // bms loyalty",
 
   init(f, S) {
     lastCycle = -1;

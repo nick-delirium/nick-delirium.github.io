@@ -290,7 +290,6 @@ const LF = norm3(0.7, -0.15, 0.45);
 export default {
   id: "gundam",
   title: "MOBILE_SUIT",
-  caption: "eyes on. the white one wakes up",
 
   init(f, S) {
     ({ cols, rows, ax } = S);

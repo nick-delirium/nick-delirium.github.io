@@ -213,7 +213,6 @@ function newState(t) {
 export default {
   id: "brain",
   title: "NEURAL_DOWNLOAD",
-  caption: "knowledge, streamed straight to the cortex",
 
   init(f, S) {
     S0 = S;

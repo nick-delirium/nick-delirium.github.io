@@ -123,7 +123,6 @@ function node(f, x, y, v, hue, glyph, ax, halo = 0) {
 export default {
   id: "mesh",
   title: "PEER_MESH",
-  caption: "no hub, no master. every node tells three friends",
 
   init(f, S) {
     R = rng(1337);

@@ -21,7 +21,6 @@ let pulses = [];
 export default {
   id: "scope",
   title: "OPEN_CHANNEL",
-  caption: "carrier up. say hello",
 
   init() {
     pulses = [];

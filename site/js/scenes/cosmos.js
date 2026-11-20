@@ -166,7 +166,6 @@ function jag(x0, y0, x1, y1, depth, out) {
 export default {
   id: "cosmos",
   title: "COSMIC_MIND",
-  caption: "a galaxy that learns to think",
 
   init(f, S) {
     build(S);

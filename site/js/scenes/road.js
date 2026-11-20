@@ -99,7 +99,6 @@ function drawHud(f, S, rpm, braking, fade, t) {
 export default {
   id: "road",
   title: "SIMRACING",
-  caption: "late apex, early throttle, no traction control",
 
   init(f, S) {
     const portrait = S.rows * S.ax > S.cols * 0.75;

@@ -530,7 +530,6 @@ function pillar(s, t, e, dt) {
 export default {
   id: "sigils",
   title: "ATELIER",
-  caption: "the spell waits for the ring to close",
 
   init(f, S) {
     cols = S.cols;

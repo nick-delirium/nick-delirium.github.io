@@ -128,7 +128,6 @@ function wheel(r, phi, th, out) {
 export default {
   id: "escapement",
   title: "SWISS_LEVER",
-  caption: "lock, unlock, impulse, drop. 28 800 times an hour.",
 
   init(f, S) {
     S0 = S;

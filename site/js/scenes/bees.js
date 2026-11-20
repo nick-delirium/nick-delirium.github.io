@@ -20,7 +20,6 @@ function hexState(q, k) {
 export default {
   id: "bees",
   title: "BEE_FARM",
-  caption: "one day. someday. a bee farm",
 
   init(f, S) {
     r = rng(5);

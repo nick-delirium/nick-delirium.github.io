@@ -132,7 +132,6 @@ function body(L, li, b, lx, y, top, rows, t, out) {
 export default {
   id: "city",
   title: "NIGHT_CITY",
-  caption: "rain on neon. somebody is still shipping.",
 
   init(f, S) {
     R = rng(2077);

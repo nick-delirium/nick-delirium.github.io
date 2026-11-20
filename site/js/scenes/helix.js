@@ -15,7 +15,6 @@ let st = null;
 export default {
   id: "helix",
   title: "DOLLY_HELIX",
-  caption: "task memory, cloned into every session",
 
   init(f, S) {
     const r = rng(11);

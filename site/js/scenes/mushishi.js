@@ -25,7 +25,6 @@ const TRAVELLER = [
 export default {
   id: "mushishi",
   title: "MUSHI",
-  caption: "simple life, drifting just outside of sight",
 
   init(f, S) {
     const { cols, rows, ax } = S;

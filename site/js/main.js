@@ -59,17 +59,18 @@ for (const k of ["theme", "layout", "res"]) if (query.get(k)) settings[k] = quer
 const viz = $("#viz");
 const hud = $(".viz-hud");
 const hudTitle = $("#hud-title");
-const hudCaption = $("#hud-caption");
 const hudStats = $("#hud-stats");
 const vizName = $("#viz-name");
+// scenes are named like files on the deck: ACCRETION_DISK.dat
+const sceneFile = (sc) => sc.title + ".dat";
+function showName(sc) {
+  hudTitle.textContent = "◢ " + sceneFile(sc);
+  vizName.textContent = sceneFile(sc);
+}
 const renderer = new Renderer($("#ascii"), $(".viz-stage"), {
   onStats: (s) => {
     const sc = renderer.scene;
-    if (sc && hudTitle.textContent !== "◢ " + sc.title) {
-      hudTitle.textContent = "◢ " + sc.title;
-      hudCaption.textContent = sc.caption;
-      vizName.textContent = sc.title;
-    }
+    if (sc && vizName.textContent !== sceneFile(sc)) showName(sc);
     hudStats.textContent = `${s.fps} fps · ${s.cols}×${s.rows} · ${settings.res}${s.degraded ? " · eco" : ""}`;
   },
 });
@@ -309,9 +310,7 @@ async function show(id) {
   const scene = await loadScene(id);
   if (currentId !== id || !scene) return;
   renderer.setScene(scene);
-  hudTitle.textContent = "◢ " + scene.title;
-  hudCaption.textContent = scene.caption;
-  vizName.textContent = scene.title;
+  showName(scene);
   hud.classList.remove("switch");
   void hud.offsetWidth;
   hud.classList.add("switch");

@@ -77,7 +77,6 @@ function spawnPetal(p, S, r, anywhere) {
 export default {
   id: "sakura",
   title: "HANAMI_SIGNAL",
-  caption: "petals in the wind, frame by frame",
 
   init(f, S) {
     st.L = layout(S);

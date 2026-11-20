@@ -89,7 +89,6 @@ function buildModel(Rg) {
 export default {
   id: "stargate",
   title: "STARGATE",
-  caption: "jita > perimeter. fly safe, capsuleer",
 
   init(f, S) {
     const { cols, rows, ax } = S;

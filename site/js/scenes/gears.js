@@ -129,7 +129,6 @@ function gearShade(g, dx, dy, d, rot, saw) {
 export default {
   id: "gears",
   title: "CAL_ND-26",
-  caption: "28 800 vph of tiny, honest engineering",
 
   init(f, S) {
     M = layout(S);

@@ -188,7 +188,6 @@ function servo(dt) {
 export default {
   id: "hdd",
   title: "DEFRAG_C",
-  caption: "7200 rpm. please do not turn off your computer.",
 
   init(f, S) {
     f.useBg = true;

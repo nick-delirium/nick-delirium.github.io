@@ -55,7 +55,6 @@ function runQuery(qn) {
 export default {
   id: "embed",
   title: "LATENT_SPACE",
-  caption: "meaning, measured as an angle",
 
   init(f, S) {
     build(S);

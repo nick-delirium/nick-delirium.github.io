@@ -495,9 +495,6 @@ button {
   font-weight: 700;
   text-shadow: var(--glow-main);
 }
-.hud-tl span {
-  color: var(--fg-dim);
-}
 .hud-br {
   position: absolute;
   right: 14px;
@@ -2391,10 +2388,9 @@ button {
   gap: 12px;
   border-bottom: 1px solid var(--line);
 }
-[data-layout="split"] .hud-tl span,
-[data-layout="window"] .hud-tl span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* the window's title bar already names the scene */
+[data-layout="window"] .hud-tl {
+  display: none;
 }
 [data-layout="split"] .viz-stage,
 [data-layout="window"] .viz-stage {
@@ -2415,7 +2411,7 @@ button {
   display: none;
 }
 
-/* bg layout: keep the scroll cue clear of the scene caption */
+/* bg layout: keep the scroll cue clear of the scene name */
 [data-layout="bg"] .scroll-cue {
   left: 50%;
   margin-left: -36px;
@@ -2426,7 +2422,7 @@ button {
   }
 }
 
-/* bg layout: the caption becomes a slim footer strip under the field instead of floating over scene HUDs */
+/* bg layout: the scene name becomes a slim footer strip under the field instead of floating over scene HUDs */
 [data-layout="bg"] .viz-hud {
   display: contents;
 }
@@ -2488,7 +2484,7 @@ button {
     min-height: 44px;
   }
 }
-/* phones run the background layout: content cards sit over the animation, so keep text crisp and drop the caption strip */
+/* phones run the background layout: content cards sit over the animation, so keep text crisp and drop the scene-name strip */
 @media (max-width: 860px) {
   [data-layout="bg"] .page-inner {
     background: color-mix(in srgb, var(--bg) 82%, transparent);

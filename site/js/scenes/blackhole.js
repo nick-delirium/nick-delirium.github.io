@@ -45,7 +45,6 @@ function spawnJet(dir) {
 export default {
   id: "blackhole",
   title: "ACCRETION_DISK",
-  caption: "everything falls in. the record stays.",
 
   init(f, S) {
     const physW = S.cols, physH = S.rows / S.ax;

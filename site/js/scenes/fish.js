@@ -480,7 +480,6 @@ function blend(a, b, t) {
 export default {
   id: "fish",
   title: "KOI_POND",
-  caption: "three fish and a little wake",
   extraHues: EXTRA_HUES,
   flee: false,
   open: false,

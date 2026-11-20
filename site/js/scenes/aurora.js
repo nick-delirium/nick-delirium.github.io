@@ -104,7 +104,6 @@ function glassSd(px, py) {
 export default {
   id: "aurora",
   title: "AURORA",
-  caption: "a ribbon of light, a pane of glass. shuffle.",
   fillHues: FILL,
 
   init(f, S) {

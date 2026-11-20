@@ -45,7 +45,6 @@ function ringRadius(ct) {
 export default {
   id: "frieren",
   title: "FIELD_OF_FLOWERS",
-  caption: "the most useless spell, and her favourite",
 
   init(f, S) {
     const { cols, rows, ax } = S;

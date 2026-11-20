@@ -77,7 +77,6 @@ function buildNetwork() {
 export default {
   id: "globe",
   title: "CARGO_NET",
-  caption: "every parcel is a satellite // fortis tracking",
 
   init(f, S) {
     if (!tex) {

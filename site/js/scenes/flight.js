@@ -220,7 +220,6 @@ function drawRoute(f, t) {
 export default {
   id: "flight",
   title: "RED_EYE_TO_PARIS",
-  caption: "LED → CDG · somewhere above the clouds",
 
   init(f, S) {
     S0 = S;
